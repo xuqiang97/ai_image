@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI生图-V4.0(tab1234已完成)</title>
+    <title>AI生图-V5.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -85,6 +85,26 @@
         .mode-readonly #l2-nav-task-switcher { display: flex !important; }
         .mode-readonly #l3-footer-actions { display: none !important; }
         .mode-readonly .l3-carousel-item { cursor: default; }
+
+        /* Tab 5 特定 - 健康度标签样式 */
+        .health-tag { display: inline-flex; align-items: center; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; line-height: 1.2; white-space: nowrap; }
+        .health-tag.red { background-color: #FEE2E2; color: #B91C1C; border: 1px solid #FECACA; }
+        .health-tag.orange { background-color: #FFEDD5; color: #C2410C; border: 1px solid #FED7AA; }
+        
+        /* 真实可交互开关样式 */
+        .confirm-toggle-wrapper { position: relative; display: inline-flex; align-items: center; cursor: pointer; user-select: none; }
+        .confirm-toggle-input { display: none; }
+        
+        /* 红色状态 (需确认) */
+        .confirm-toggle-bg { width: 64px; height: 24px; border-radius: 9999px; transition: all 0.3s ease; display: flex; align-items: center; padding: 0 4px; font-size: 10px; font-weight: bold; box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06); }
+        .confirm-toggle-bg.is-red { background-color: #EF4444; color: white; justify-content: flex-end; }
+        .confirm-toggle-bg.is-green { background-color: #DCFCE7; color: #15803d; border: 1px solid #BBF7D0; justify-content: flex-start; }
+        
+        .confirm-toggle-dot { width: 16px; height: 16px; background-color: white; border-radius: 50%; position: absolute; transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1); box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); }
+        .confirm-toggle-wrapper.red-mode .confirm-toggle-dot { left: 4px; }
+        .confirm-toggle-wrapper.green-mode .confirm-toggle-dot { left: calc(100% - 20px); background-color: #22c55e; }
+        
+        .toggle-text { margin: 0 4px; }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
@@ -134,7 +154,10 @@
                     <button onclick="switchTab(2)" id="tab-btn-2" class="tab-btn py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors"><i class="fa-solid fa-circle-notch fa-spin mr-1.5 text-xs" id="tab-icon-2"></i>生图中 (3)</button>
                     <button onclick="switchTab(3)" id="tab-btn-3" class="tab-btn py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors"><i class="fa-solid fa-clipboard-check mr-1.5"></i>待审核 (8)</button>
                     <button onclick="switchTab(4)" id="tab-btn-4" class="tab-btn py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors"><i class="fa-solid fa-paper-plane mr-1.5"></i>待推送 (2)</button>
-                    <button class="tab-btn py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors">已完成</button>
+                    <!-- Tab 5 Button with Dynamic Count -->
+                    <button onclick="switchTab(5)" id="tab-btn-5" class="tab-btn py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors">
+                        <i class="fa-solid fa-flag-checkered mr-1.5"></i>已完成 (今日: 20 | <span class="text-red-500" id="tab5-confirm-count">需确认: 3</span>)
+                    </button>
                 </nav>
             </div>
 
@@ -142,7 +165,7 @@
             <div id="tab-content-1" class="flex flex-col flex-1 min-h-0">
                 <div class="bg-slate-50 border-b border-gray-200 p-5 shrink-0"><div class="flex justify-between items-start"><div class="flex items-center space-x-8"><div class="flex items-center space-x-3 text-sm"><span class="text-slate-500 font-bold text-xs uppercase tracking-wider mr-1">任务状态:</span><div class="segmented-control"><div class="segment-item active" onclick="selectSegment(this)">全部</div><div class="segment-item" onclick="selectSegment(this)">待完善</div><div class="segment-item" onclick="selectSegment(this)">待提交</div></div></div><div class="flex items-center space-x-2"><span class="text-slate-500 font-bold text-xs uppercase tracking-wider mr-1">搜索:</span><div class="flex shadow-sm rounded-md"><div class="relative flex-grow focus-within:z-10"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fa-solid fa-magnifying-glass text-gray-400 text-xs"></i></div><input type="text" class="focus:ring-blue-500 focus:border-blue-500 block w-72 rounded-none rounded-l-md pl-9 sm:text-sm border-gray-300 py-1.5 text-xs" placeholder="输入系统SKU / TaskID / BatchID"></div><button class="relative -ml-px inline-flex items-center px-4 py-1.5 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:z-10">查询</button><button class="relative -ml-px inline-flex items-center px-3 py-1.5 border border-gray-300 bg-gray-50 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded-r-md focus:z-10">重置</button></div></div></div><div class="flex items-center space-x-2"><span class="text-slate-500 font-bold text-xs uppercase tracking-wider">排序:</span><select class="block w-40 pl-3 pr-8 py-1.5 text-sm border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md shadow-sm bg-white cursor-pointer hover:bg-gray-50"><option>更新时间倒排</option><option>更新时间正排</option><option>创建时间倒排</option><option>创建时间正排</option></select></div></div></div>
                 <div class="bg-white px-5 py-3 border-b border-gray-100 flex items-center shrink-0 shadow-[0_2px_4px_rgba(0,0,0,0.02)] z-10 space-x-3"><button onclick="openDrawer('drawer-add')" class="btn-primary hint-target" data-hint="A1 新增抽屉"><i class="fa-solid fa-plus mr-1.5"></i>新增任务</button><button onclick="openModal('modal-import')" class="btn-default hint-target" data-hint="B 批量导入"><i class="fa-solid fa-file-import mr-1.5"></i>批量导入系统SKU</button><button onclick="openModal('modal-config')" class="btn-default hint-target" data-hint="C 批量配置"><i class="fa-solid fa-sliders mr-1.5"></i>批量修改配置</button><button onclick="openModal('modal-submit-batch')" class="btn-success hint-target" data-hint="D2 提交(批量/阻断)"><i class="fa-solid fa-rocket mr-1.5"></i>批量提交生图</button><button onclick="openModal('modal-delete-batch')" class="btn-danger hint-target" data-hint="E2 删除(批量)"><i class="fa-regular fa-trash-can mr-1.5"></i>批量删除</button></div>
-                <div class="flex-1 overflow-auto bg-gray-50 px-5 pt-4 pb-10"><table class="min-w-full divide-y divide-gray-200 border border-gray-200 shadow-sm rounded-lg overflow-hidden bg-white"><thead class="bg-slate-50 text-slate-500 text-xs uppercase font-semibold tracking-wide"><tr><th class="px-5 py-3 text-left w-10"><input type="checkbox" class="rounded text-blue-600 focus:ring-0 cursor-pointer"></th><th class="px-5 py-3 text-left w-64">基本信息</th><th class="px-5 py-3 text-left w-32 whitespace-nowrap">任务状态</th><th class="px-5 py-3 text-left w-96">商品文本信息</th><th class="px-5 py-3 text-left w-48">商品图片信息</th><th class="px-5 py-3 text-left w-48">配置信息</th><th class="px-5 py-3 text-left w-24">操作</th></tr></thead><tbody class="divide-y divide-gray-100 text-sm"><tr class="group hover:bg-blue-50/40 transition-colors"><td class="px-5 py-4 align-top"><input type="checkbox" class="rounded text-blue-600 mt-1 focus:ring-0 cursor-pointer"></td><td class="px-5 py-4 align-top"><div class="font-bold text-slate-800 text-base">系统SKU: A001</div><div class="text-xs text-gray-500 font-mono mt-1">TaskID: T20260112-0001</div><div class="text-xs text-gray-400 font-mono">BatchID: B20260112-0001</div><div class="text-xs text-gray-400 mt-1">创建: 2026-01-12 10:00</div><div class="text-xs text-gray-400">更新: 2026-01-12 10:00</div></td><td class="px-5 py-4 align-top"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 border border-orange-100 whitespace-nowrap"><span class="w-1.5 h-1.5 rounded-full bg-orange-400 mr-1.5"></span>待完善</span></td><td class="px-5 py-4 align-top cell-relative"><div class="truncate w-80 font-medium text-gray-700 truncate-hover cursor-help" title="">标题: Red Vacuum Cup Stainless Steel 500ml Leakproof</div><div class="truncate w-80 text-xs text-red-500 mt-1.5 font-bold flex items-center"><i class="fa-solid fa-circle-exclamation mr-1"></i>卖点: (待补充)</div></td><td class="px-5 py-4 align-top"><button onclick="togglePopover(this)" class="group/btn h-10 w-10 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50 transition-all bg-gray-50 hint-target" data-hint="F 行内上传" title="点击上传"><i class="fa-solid fa-plus group-hover/btn:scale-110 transition-transform"></i></button><div class="text-[10px] text-red-400 mt-1.5 font-medium flex items-center"><i class="fa-solid fa-circle-exclamation mr-1"></i>缺参考图</div></td><td class="px-5 py-4 align-top text-xs text-gray-500"><div class="text-blue-600 font-bold mb-1">LinkFox</div><div>预: 14 张</div><div class="text-[10px] text-gray-400 mt-0.5 border-gray-300 inline-block">场:6 白特:4 特:2 卖:2</div></td><td class="px-5 py-4 align-top space-y-2"><div class="cursor-pointer text-blue-600 hover:text-blue-800 font-medium text-xs hint-target" data-hint="A2 编辑抽屉" onclick="openDrawer('drawer-edit')">编辑</div><div class="cursor-pointer text-red-600 hover:text-red-800 font-medium text-xs hint-target" data-hint="E1 删除(单条)" onclick="openModal('modal-delete-single')">删除</div></td></tr><tr class="group hover:bg-blue-50/40 transition-colors bg-green-50/5"><td class="px-5 py-4 align-top"><input type="checkbox" class="rounded text-blue-600 mt-1 focus:ring-0 cursor-pointer"></td><td class="px-5 py-4 align-top"><div class="font-bold text-slate-800 text-base">系统SKU: B002</div><div class="text-xs text-gray-400 font-mono mt-1">TaskID: T20260112-0002</div><div class="text-xs text-gray-400 font-mono">BatchID: B20260112-0001</div><div class="text-xs text-gray-400 mt-1">创建: 2026-01-12 09:00</div><div class="text-xs text-gray-400">更新: 2026-01-12 09:30</div></td><td class="px-5 py-4 align-top"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-100 whitespace-nowrap"><span class="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5"></span>待提交</span></td><td class="px-5 py-4 align-top cell-relative"><div class="truncate w-80 font-medium text-gray-700 truncate-hover cursor-help">标题: Blue Yoga Mat Non-slip Extra Thick</div><div class="truncate w-80 text-xs text-gray-500 mt-1.5 truncate-hover cursor-help">卖点: 防滑, 加厚, 环保材质, 附带绑带</div></td><td class="px-5 py-4 align-top"><div class="flex items-center -space-x-2 py-1 hint-target" data-hint="F 行内上传" onclick="togglePopover(this)"><img src="https://placehold.co/80x80/eef2ff/334155?text=1" class="w-9 h-9 rounded-lg object-cover border-2 border-white shadow-sm cursor-pointer hover:z-10 hover:scale-110 transition-transform hover:shadow-md"><img src="https://placehold.co/80x80/eef2ff/334155?text=2" class="w-9 h-9 rounded-lg object-cover border-2 border-white shadow-sm cursor-pointer hover:z-10 hover:scale-110 transition-transform hover:shadow-md"><div class="w-9 h-9 rounded-lg bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-gray-500 font-bold shadow-sm cursor-pointer hover:bg-gray-200 z-0">+3</div></div></td><td class="px-5 py-4 align-top text-xs text-gray-500"><div class="text-blue-600 font-bold mb-1">LinkFox</div><div>预: 18 张</div><div class="text-[10px] text-gray-400 mt-0.5 border-gray-300 inline-block">场:6 白特:6 特:4 卖:2</div></td><td class="px-5 py-4 align-top space-y-2"><div class="cursor-pointer text-blue-600 hover:text-blue-800 font-medium text-xs hint-target" data-hint="A2 编辑抽屉" onclick="openDrawer('drawer-edit')">编辑</div><div class="cursor-pointer text-green-600 hover:text-green-800 font-bold text-xs hint-target" data-hint="D1 提交(单条)" onclick="openModal('modal-submit-single')">提交生图</div><div class="cursor-pointer text-red-600 hover:text-red-800 font-medium text-xs hint-target" data-hint="E1 删除(单条)" onclick="openModal('modal-delete-single')">删除</div></td></tr></tbody></table></div>
+                <div class="flex-1 overflow-auto bg-gray-50 px-5 pt-4 pb-10"><table class="min-w-full divide-y divide-gray-200 border border-gray-200 shadow-sm rounded-lg overflow-hidden bg-white"><thead class="bg-slate-50 text-slate-500 text-xs uppercase font-semibold tracking-wide"><tr><th class="px-5 py-3 text-left w-10"><input type="checkbox" class="rounded text-blue-600 focus:ring-0 cursor-pointer"></th><th class="px-5 py-3 text-left w-64">基本信息</th><th class="px-5 py-3 text-left w-32 whitespace-nowrap">任务状态</th><th class="px-5 py-3 text-left w-96">商品文本信息</th><th class="px-5 py-3 text-left w-48">商品图片信息</th><th class="px-5 py-3 text-left w-48">配置信息</th><th class="px-5 py-3 text-left w-24">操作</th></tr></thead><tbody class="divide-y divide-gray-100 text-sm"><tr class="group hover:bg-blue-50/40 transition-colors"><td class="px-5 py-4 align-top"><input type="checkbox" class="rounded text-blue-600 mt-1 focus:ring-0 cursor-pointer"></td><td class="px-5 py-4 align-top"><div class="font-bold text-slate-800 text-base">系统SKU: A001</div><div class="text-xs text-gray-500 font-mono mt-1">TaskID: T20260112-0001</div><div class="text-xs text-gray-400 font-mono">BatchID: B20260112-0001</div><div class="text-xs text-gray-400 mt-1">创建: 2026-01-12 10:00</div><div class="text-xs text-gray-400">更新: 2026-01-12 10:00</div></td><td class="px-5 py-4 align-top"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 border border-orange-100 whitespace-nowrap"><span class="w-1.5 h-1.5 rounded-full bg-orange-400 mr-1.5"></span>待完善</span></td><td class="px-5 py-4 align-top cell-relative"><div class="truncate w-80 font-medium text-gray-700 truncate-hover cursor-help" title="">标题: 红色不锈钢保温杯500ml防漏设计</div><div class="truncate w-80 text-xs text-red-500 mt-1.5 font-bold flex items-center"><i class="fa-solid fa-circle-exclamation mr-1"></i>卖点: (待补充)</div></td><td class="px-5 py-4 align-top"><button onclick="togglePopover(this)" class="group/btn h-10 w-10 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50 transition-all bg-gray-50 hint-target" data-hint="F 行内上传" title="点击上传"><i class="fa-solid fa-plus group-hover/btn:scale-110 transition-transform"></i></button><div class="text-[10px] text-red-400 mt-1.5 font-medium flex items-center"><i class="fa-solid fa-circle-exclamation mr-1"></i>缺参考图</div></td><td class="px-5 py-4 align-top text-xs text-gray-500"><div class="text-blue-600 font-bold mb-1">LinkFox</div><div>预: 14 张</div><div class="text-[10px] text-gray-400 mt-0.5 border-gray-300 inline-block">场:6 白特:4 特:2 卖:2</div></td><td class="px-5 py-4 align-top space-y-2"><div class="cursor-pointer text-blue-600 hover:text-blue-800 font-medium text-xs hint-target" data-hint="A2 编辑抽屉" onclick="openDrawer('drawer-edit')">编辑</div><div class="cursor-pointer text-red-600 hover:text-red-800 font-medium text-xs hint-target" data-hint="E1 删除(单条)" onclick="openModal('modal-delete-single')">删除</div></td></tr><tr class="group hover:bg-blue-50/40 transition-colors bg-green-50/5"><td class="px-5 py-4 align-top"><input type="checkbox" class="rounded text-blue-600 mt-1 focus:ring-0 cursor-pointer"></td><td class="px-5 py-4 align-top"><div class="font-bold text-slate-800 text-base">系统SKU: B002</div><div class="text-xs text-gray-400 font-mono mt-1">TaskID: T20260112-0002</div><div class="text-xs text-gray-400 font-mono">BatchID: B20260112-0001</div><div class="text-xs text-gray-400 mt-1">创建: 2026-01-12 09:00</div><div class="text-xs text-gray-400">更新: 2026-01-12 09:30</div></td><td class="px-5 py-4 align-top"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-100 whitespace-nowrap"><span class="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5"></span>待提交</span></td><td class="px-5 py-4 align-top cell-relative"><div class="truncate w-80 font-medium text-gray-700 truncate-hover cursor-help">标题: 蓝色加厚防滑瑜伽垫环保TPE材质附收纳带</div><div class="truncate w-80 text-xs text-gray-500 mt-1.5 truncate-hover cursor-help">卖点: 防滑, 加厚, 环保材质, 附带绑带</div></td><td class="px-5 py-4 align-top"><div class="flex items-center -space-x-2 py-1 hint-target" data-hint="F 行内上传" onclick="togglePopover(this)"><img src="https://placehold.co/80x80/eef2ff/334155?text=1" class="w-9 h-9 rounded-lg object-cover border-2 border-white shadow-sm cursor-pointer hover:z-10 hover:scale-110 transition-transform hover:shadow-md"><img src="https://placehold.co/80x80/eef2ff/334155?text=2" class="w-9 h-9 rounded-lg object-cover border-2 border-white shadow-sm cursor-pointer hover:z-10 hover:scale-110 transition-transform hover:shadow-md"><div class="w-9 h-9 rounded-lg bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-gray-500 font-bold shadow-sm cursor-pointer hover:bg-gray-200 z-0">+3</div></div></td><td class="px-5 py-4 align-top text-xs text-gray-500"><div class="text-blue-600 font-bold mb-1">LinkFox</div><div>预: 18 张</div><div class="text-[10px] text-gray-400 mt-0.5 border-gray-300 inline-block">场:6 白特:6 特:4 卖:2</div></td><td class="px-5 py-4 align-top space-y-2"><div class="cursor-pointer text-blue-600 hover:text-blue-800 font-medium text-xs hint-target" data-hint="A2 编辑抽屉" onclick="openDrawer('drawer-edit')">编辑</div><div class="cursor-pointer text-green-600 hover:text-green-800 font-bold text-xs hint-target" data-hint="D1 提交(单条)" onclick="openModal('modal-submit-single')">提交生图</div><div class="cursor-pointer text-red-600 hover:text-red-800 font-medium text-xs hint-target" data-hint="E1 删除(单条)" onclick="openModal('modal-delete-single')">删除</div></td></tr></tbody></table></div>
                 <div class="px-6 py-4 border-t border-gray-200 bg-white shrink-0 flex items-center justify-between text-sm text-gray-500 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)]"><div>共 <span class="font-bold text-gray-700">5</span> 条</div><div class="flex items-center space-x-4"><select class="border-gray-300 rounded text-sm py-1 focus:ring-blue-500"><option>20条/页</option><option>50条/页</option></select><nav class="isolate inline-flex -space-x-px rounded-md shadow-sm"><a href="#" class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"><i class="fa-solid fa-chevron-left text-xs"></i></a><a href="#" class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-blue-600">1</a><span class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300">...</span><a href="#" class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"><i class="fa-solid fa-chevron-right text-xs"></i></a></nav><div class="flex items-center space-x-2"><span>前往</span><input type="text" class="w-12 text-center border border-gray-300 rounded py-1 focus:ring-blue-500 outline-none"><span>页</span></div></div></div>
             </div>
 
@@ -150,7 +173,7 @@
             <div id="tab-content-2" class="flex flex-col flex-1 min-h-0 hidden-tab">
                 <div class="bg-slate-50 border-b border-gray-200 p-5 shrink-0"><div class="flex justify-between items-start"><div class="flex items-center space-x-8"><div class="flex items-center space-x-3 text-sm"><span class="text-slate-500 font-bold text-xs uppercase tracking-wider mr-1">任务状态:</span><div class="segmented-control"><div class="segment-item active" onclick="selectSegment(this)">全部</div><div class="segment-item" onclick="selectSegment(this)">排队中</div><div class="segment-item" onclick="selectSegment(this)">生成中</div></div></div><div class="flex items-center space-x-2"><span class="text-slate-500 font-bold text-xs uppercase tracking-wider mr-1">搜索:</span><div class="flex shadow-sm rounded-md"><div class="relative flex-grow focus-within:z-10"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fa-solid fa-magnifying-glass text-gray-400 text-xs"></i></div><input type="text" class="focus:ring-blue-500 focus:border-blue-500 block w-72 rounded-none rounded-l-md pl-9 sm:text-sm border-gray-300 py-1.5 text-xs" placeholder="输入系统SKU / TaskID / BatchID"></div><button class="relative -ml-px inline-flex items-center px-4 py-1.5 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:z-10">查询</button><button class="relative -ml-px inline-flex items-center px-3 py-1.5 border border-gray-300 bg-gray-50 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded-r-md focus:z-10">重置</button></div></div></div><div class="flex items-center space-x-2"><span class="text-slate-500 font-bold text-xs uppercase tracking-wider">排序:</span><select class="block w-40 pl-3 pr-8 py-1.5 text-sm border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md shadow-sm bg-white cursor-pointer hover:bg-gray-50"><option>更新时间倒排</option><option>更新时间正排</option><option>创建时间倒排</option><option>创建时间正排</option></select></div></div></div>
                 <div class="bg-white px-5 py-3 border-b border-gray-100 flex items-center shrink-0 shadow-[0_2px_4px_rgba(0,0,0,0.02)] z-10 space-x-3"><button class="btn-primary hint-target" data-hint="刷新进度" onclick="showToast('刷新成功')"><i class="fa-solid fa-arrows-rotate mr-1.5"></i>刷新生成进度</button></div>
-                <div class="flex-1 overflow-auto bg-gray-50 px-5 pt-4 pb-10"><table class="min-w-full divide-y divide-gray-200 border border-gray-200 shadow-sm rounded-lg overflow-hidden bg-white"><thead class="bg-slate-50 text-slate-500 text-xs uppercase font-semibold tracking-wide"><tr><th class="px-5 py-3 text-left w-10"><input type="checkbox" disabled class="rounded text-gray-300 cursor-not-allowed"></th><th class="px-5 py-3 text-left w-64">基本信息</th><th class="px-5 py-3 text-left w-32 whitespace-nowrap">任务状态</th><th class="px-5 py-3 text-left w-80">生成进度</th><th class="px-5 py-3 text-left w-64">商品文本信息</th><th class="px-5 py-3 text-left w-48">商品图片信息</th><th class="px-5 py-3 text-left w-48">配置信息</th><th class="px-5 py-3 text-left w-24">操作</th></tr></thead><tbody class="divide-y divide-gray-100 text-sm"><tr class="group hover:bg-purple-50/10 transition-colors"><td class="px-5 py-4 align-top"><input type="checkbox" disabled class="rounded text-gray-300 cursor-not-allowed"></td><td class="px-5 py-4 align-top"><div class="font-bold text-slate-800 text-base">系统SKU: C003</div><div class="text-xs text-gray-500 font-mono mt-1">TaskID: T20260112-0003</div><div class="text-xs text-gray-400 font-mono">BatchID: B20260112-0001</div><div class="text-xs text-gray-400 mt-1">创建: 2026-01-12 10:00</div><div class="text-xs text-gray-400">更新: 2026-01-12 10:35</div></td><td class="px-5 py-4 align-top"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-100 whitespace-nowrap"><i class="fa-solid fa-circle-notch fa-spin mr-1.5 text-[10px]"></i>生成中</span></td><td class="px-5 py-4 align-top"><div class="w-full bg-gray-200 rounded-full h-2.5 mb-2 overflow-hidden"><div class="bg-purple-500 h-2.5 rounded-full relative" style="width: 60%"><div class="absolute inset-0 bg-white/20 animate-[pulse_2s_infinite]"></div></div></div><div class="text-[10px] text-gray-400 mt-1 mb-1"><i class="fa-regular fa-clock mr-1"></i>已耗时: 35m 12s</div><div class="text-[11px] font-mono text-gray-500 flex items-center space-x-1.5"><span>计划:20</span><span class="text-gray-300">|</span><span class="text-green-600 font-bold">成功:8</span><span class="text-gray-300">|</span><span class="text-purple-600 font-bold">生成中:5</span><span class="text-gray-300">|</span><span class="text-red-500 font-bold">失败:7</span></div></td><td class="px-5 py-4 align-top cell-relative"><div class="truncate w-60 font-medium text-gray-700 truncate-hover cursor-help">标题: Camping Tent Waterproof...</div><div class="truncate w-60 text-xs text-gray-500 mt-1.5 truncate-hover cursor-help">卖点: 防雨, 轻便...</div></td><td class="px-5 py-4 align-top"><div class="flex items-center -space-x-2 py-1 grayscale opacity-80 cursor-not-allowed"><img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white"><img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white"><div class="w-9 h-9 rounded-lg bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-gray-500">+2</div></div></td><td class="px-5 py-4 align-top text-xs text-gray-500"><div class="text-blue-600 font-bold mb-1">LinkFox</div><div>预: 20 张</div><div class="text-[10px] text-gray-400 mt-0.5 border-gray-300 inline-block">场:6 白特:6 特:4 卖:2</div></td><td class="px-5 py-4 align-top"><button class="text-blue-600 hover:text-blue-800 font-medium text-xs hint-target" data-hint="查看抽屉" onclick="openDrawer('drawer-view')">查看任务</button></td></tr><tr class="group hover:bg-blue-50/10 transition-colors"><td class="px-5 py-4 align-top"><input type="checkbox" disabled class="rounded text-gray-300 cursor-not-allowed"></td><td class="px-5 py-4 align-top"><div class="font-bold text-slate-800 text-base">系统SKU: D004</div><div class="text-xs text-gray-500 font-mono mt-1">TaskID: T20260112-0004</div><div class="text-xs text-gray-400 font-mono">BatchID: B20260112-0001</div><div class="text-xs text-gray-400 mt-1">创建: 2026-01-12 10:40</div><div class="text-xs text-gray-400">更新: 2026-01-12 10:40</div></td><td class="px-5 py-4 align-top"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100 whitespace-nowrap"><i class="fa-regular fa-clock mr-1.5"></i>排队中</span></td><td class="px-5 py-4 align-top"><div class="w-full bg-gray-200 rounded-full h-2.5 mb-2"><div class="bg-blue-400 h-2.5 rounded-full" style="width: 0%"></div></div><div class="text-[10px] text-gray-400 mt-1 mb-1"><i class="fa-regular fa-clock mr-1"></i>已耗时: 00m 05s</div><div class="text-[11px] font-mono text-gray-500 flex items-center space-x-1.5"><span>计划:14</span><span class="text-gray-300">|</span><span>成功:0</span><span class="text-gray-300">|</span><span>生成中:0</span><span class="text-gray-300">|</span><span>失败:0</span></div></td><td class="px-5 py-4 align-top cell-relative"><div class="truncate w-60 font-medium text-gray-700 truncate-hover cursor-help">标题: Ceramic Coffee Mug...</div><div class="truncate w-60 text-xs text-gray-500 mt-1.5 truncate-hover cursor-help">卖点: 陶瓷, 耐热...</div></td><td class="px-5 py-4 align-top"><div class="flex items-center -space-x-2 py-1 grayscale opacity-80 cursor-not-allowed"><img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white"><img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white"><div class="w-9 h-9 rounded-lg bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-gray-500">+2</div></div></td><td class="px-5 py-4 align-top text-xs text-gray-500"><div class="text-blue-600 font-bold mb-1">LinkFox</div><div>预: 14 张</div><div class="text-[10px] text-gray-400 mt-0.5 border-gray-300 inline-block">场:6 白特:4 特:2 卖:2</div></td><td class="px-5 py-4 align-top"><button class="text-blue-600 hover:text-blue-800 font-medium text-xs hint-target" data-hint="查看抽屉" onclick="openDrawer('drawer-view')">查看任务</button></td></tr></tbody></table></div>
+                <div class="flex-1 overflow-auto bg-gray-50 px-5 pt-4 pb-10"><table class="min-w-full divide-y divide-gray-200 border border-gray-200 shadow-sm rounded-lg overflow-hidden bg-white"><thead class="bg-slate-50 text-slate-500 text-xs uppercase font-semibold tracking-wide"><tr><th class="px-5 py-3 text-left w-10"><input type="checkbox" disabled class="rounded text-gray-300 cursor-not-allowed"></th><th class="px-5 py-3 text-left w-64">基本信息</th><th class="px-5 py-3 text-left w-32 whitespace-nowrap">任务状态</th><th class="px-5 py-3 text-left w-80">生成进度</th><th class="px-5 py-3 text-left w-64">商品文本信息</th><th class="px-5 py-3 text-left w-48">商品图片信息</th><th class="px-5 py-3 text-left w-48">配置信息</th><th class="px-5 py-3 text-left w-24">操作</th></tr></thead><tbody class="divide-y divide-gray-100 text-sm"><tr class="group hover:bg-purple-50/10 transition-colors"><td class="px-5 py-4 align-top"><input type="checkbox" disabled class="rounded text-gray-300 cursor-not-allowed"></td><td class="px-5 py-4 align-top"><div class="font-bold text-slate-800 text-base">系统SKU: C003</div><div class="text-xs text-gray-500 font-mono mt-1">TaskID: T20260112-0003</div><div class="text-xs text-gray-400 font-mono">BatchID: B20260112-0001</div><div class="text-xs text-gray-400 mt-1">创建: 2026-01-12 10:00</div><div class="text-xs text-gray-400">更新: 2026-01-12 10:35</div></td><td class="px-5 py-4 align-top"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-100 whitespace-nowrap"><i class="fa-solid fa-circle-notch fa-spin mr-1.5 text-[10px]"></i>生成中</span></td><td class="px-5 py-4 align-top"><div class="w-full bg-gray-200 rounded-full h-2.5 mb-2 overflow-hidden"><div class="bg-purple-500 h-2.5 rounded-full relative" style="width: 60%"><div class="absolute inset-0 bg-white/20 animate-[pulse_2s_infinite]"></div></div></div><div class="text-[10px] text-gray-400 mt-1 mb-1"><i class="fa-regular fa-clock mr-1"></i>已耗时: 35m 12s</div><div class="text-[11px] font-mono text-gray-500 flex items-center space-x-1.5"><span>计划:20</span><span class="text-gray-300">|</span><span class="text-green-600 font-bold">成功:8</span><span class="text-gray-300">|</span><span class="text-purple-600 font-bold">生成中:5</span><span class="text-gray-300">|</span><span class="text-red-500 font-bold">失败:7</span></div></td><td class="px-5 py-4 align-top cell-relative"><div class="truncate w-60 font-medium text-gray-700 truncate-hover cursor-help">标题: 露营帐篷防水可容纳4人易于搭建</div><div class="truncate w-60 text-xs text-gray-500 mt-1.5 truncate-hover cursor-help">卖点: 防雨, 轻便...</div></td><td class="px-5 py-4 align-top"><div class="flex items-center -space-x-2 py-1 grayscale opacity-80 cursor-not-allowed"><img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white"><img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white"><div class="w-9 h-9 rounded-lg bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-gray-500">+2</div></div></td><td class="px-5 py-4 align-top text-xs text-gray-500"><div class="text-blue-600 font-bold mb-1">LinkFox</div><div>预: 20 张</div><div class="text-[10px] text-gray-400 mt-0.5 border-gray-300 inline-block">场:6 白特:6 特:4 卖:2</div></td><td class="px-5 py-4 align-top"><button class="text-blue-600 hover:text-blue-800 font-medium text-xs hint-target" data-hint="查看抽屉" onclick="openDrawer('drawer-view')">查看任务</button></td></tr><tr class="group hover:bg-blue-50/10 transition-colors"><td class="px-5 py-4 align-top"><input type="checkbox" disabled class="rounded text-gray-300 cursor-not-allowed"></td><td class="px-5 py-4 align-top"><div class="font-bold text-slate-800 text-base">系统SKU: D004</div><div class="text-xs text-gray-500 font-mono mt-1">TaskID: T20260112-0004</div><div class="text-xs text-gray-400 font-mono">BatchID: B20260112-0001</div><div class="text-xs text-gray-400 mt-1">创建: 2026-01-12 10:40</div><div class="text-xs text-gray-400">更新: 2026-01-12 10:40</div></td><td class="px-5 py-4 align-top"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100 whitespace-nowrap"><i class="fa-regular fa-clock mr-1.5"></i>排队中</span></td><td class="px-5 py-4 align-top"><div class="w-full bg-gray-200 rounded-full h-2.5 mb-2"><div class="bg-blue-400 h-2.5 rounded-full" style="width: 0%"></div></div><div class="text-[10px] text-gray-400 mt-1 mb-1"><i class="fa-regular fa-clock mr-1"></i>已耗时: 00m 05s</div><div class="text-[11px] font-mono text-gray-500 flex items-center space-x-1.5"><span>计划:14</span><span class="text-gray-300">|</span><span>成功:0</span><span class="text-gray-300">|</span><span>生成中:0</span><span class="text-gray-300">|</span><span>失败:0</span></div></td><td class="px-5 py-4 align-top cell-relative"><div class="truncate w-60 font-medium text-gray-700 truncate-hover cursor-help">标题: 陶瓷咖啡杯500ml陶瓷耐热</div><div class="truncate w-60 text-xs text-gray-500 mt-1.5 truncate-hover cursor-help">卖点: 陶瓷, 耐热...</div></td><td class="px-5 py-4 align-top"><div class="flex items-center -space-x-2 py-1 grayscale opacity-80 cursor-not-allowed"><img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white"><img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white"><div class="w-9 h-9 rounded-lg bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-gray-500">+2</div></div></td><td class="px-5 py-4 align-top text-xs text-gray-500"><div class="text-blue-600 font-bold mb-1">LinkFox</div><div>预: 14 张</div><div class="text-[10px] text-gray-400 mt-0.5 border-gray-300 inline-block">场:6 白特:4 特:2 卖:2</div></td><td class="px-5 py-4 align-top"><button class="text-blue-600 hover:text-blue-800 font-medium text-xs hint-target" data-hint="查看抽屉" onclick="openDrawer('drawer-view')">查看任务</button></td></tr></tbody></table></div>
                 <div class="px-6 py-4 border-t border-gray-200 bg-white shrink-0 flex items-center justify-between text-sm text-gray-500 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)]"><div>共 <span class="font-bold text-gray-700">3</span> 条</div><div class="flex items-center space-x-4"><select class="border-gray-300 rounded text-sm py-1 focus:ring-blue-500"><option>20条/页</option><option>50条/页</option></select><nav class="isolate inline-flex -space-x-px rounded-md shadow-sm"><a href="#" class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"><i class="fa-solid fa-chevron-left text-xs"></i></a><a href="#" class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-blue-600">1</a><span class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300">...</span><a href="#" class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"><i class="fa-solid fa-chevron-right text-xs"></i></a></nav><div class="flex items-center space-x-2"><span>前往</span><input type="text" class="w-12 text-center border border-gray-300 rounded py-1 focus:ring-blue-500 outline-none"><span>页</span></div></div></div>
             </div>
 
@@ -208,7 +231,7 @@
                                     <div class="text-[10px] text-gray-400 mt-2">总耗时: 12m 30s</div>
                                 </td>
                                 <!-- Removed Audit Progress Cell -->
-                                <td class="px-5 py-4 align-top cell-relative"><div class="truncate w-80 font-medium text-gray-700 truncate-hover cursor-help">标题: Coffee Maker Espresso...</div><div class="truncate w-80 text-xs text-gray-500 mt-1.5 truncate-hover cursor-help">卖点: 20Bar 高压, PID 温控...</div></td>
+                                <td class="px-5 py-4 align-top cell-relative"><div class="truncate w-80 font-medium text-gray-700 truncate-hover cursor-help">标题: 意式浓缩咖啡机20Bar高压PID温控</div><div class="truncate w-80 text-xs text-gray-500 mt-1.5 truncate-hover cursor-help">卖点: 20Bar 高压, PID 温控...</div></td>
                                 <td class="px-5 py-4 align-top"><div class="flex items-center -space-x-2 py-1 grayscale opacity-80 cursor-not-allowed"><img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white"><img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white"><div class="w-9 h-9 rounded-lg bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-gray-500">+2</div></div></td>
                                 <td class="px-5 py-4 align-top text-xs text-gray-500"><div class="text-blue-600 font-bold mb-1">LinkFox</div><div>预: 16 张</div><div class="text-[10px] text-gray-400 mt-0.5 border-gray-300 inline-block">场:8 白特:2 特:2 卖:4</div></td>
                                 <td class="px-5 py-4 align-top space-y-2">
@@ -224,7 +247,8 @@
                                     <div class="text-[10px] text-gray-400 mt-2">总耗时: 10m 00s</div>
                                 </td>
                                 <!-- Removed Audit Progress Cell -->
-                                <td class="px-5 py-4 align-top cell-relative"><div class="truncate w-60 font-medium text-gray-700 truncate-hover cursor-help">标题: Smart Watch Tracker...</div><div class="truncate w-60 text-xs text-gray-500 mt-1.5 truncate-hover cursor-help">卖点: 心率监测, 5ATM防水...</div></td>
+                                <td class="px-5 py-4 align-top cell-relative"><div class="truncate w-60 font-medium text-gray-700 truncate-hover cursor-help">标题: 
+智能手表追踪器充电5分钟通话2小时</div><div class="truncate w-60 text-xs text-gray-500 mt-1.5 truncate-hover cursor-help">卖点: 心率监测, 5ATM防水...</div></td>
                                 <td class="px-5 py-4 align-top"><div class="flex items-center -space-x-2 py-1 grayscale opacity-80 cursor-not-allowed"><img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white"><img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white"><div class="w-9 h-9 rounded-lg bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-gray-500">+3</div></div></td>
                                 <td class="px-5 py-4 align-top text-xs text-gray-500"><div class="text-blue-600 font-bold mb-1">LinkFox</div><div>预: 18 张</div><div class="text-[10px] text-gray-400 mt-0.5 border-gray-300 inline-block">场:6 白特:6 特:4 卖:2</div></td>
                                 <td class="px-5 py-4 align-top space-y-2">
@@ -323,7 +347,8 @@
                                     <div class="flex items-center"><i class="fa-solid fa-server text-gray-400 mr-2"></i><span class="text-xs text-gray-700">ERP素材库</span></div>
                                 </td>
                                 <td class="px-5 py-4 align-top cell-relative">
-                                    <div class="truncate w-48 font-medium text-gray-700 truncate-hover cursor-help">标题: Portable Blender USB...</div>
+                                    <div class="truncate w-48 font-medium text-gray-700 truncate-hover cursor-help">标题: 
+便携式USB搅拌机</div>
                                     <div class="truncate w-48 text-xs text-gray-500 mt-1.5 truncate-hover cursor-help">卖点: USB充电, 便携, 6叶刀头...</div>
                                 </td>
                                 <td class="px-5 py-4 align-top space-y-2">
@@ -366,7 +391,7 @@
                                     <div class="flex items-center"><i class="fa-solid fa-server text-gray-400 mr-2"></i><span class="text-xs text-gray-700">ERP素材库</span></div>
                                 </td>
                                 <td class="px-5 py-4 align-top cell-relative">
-                                    <div class="truncate w-48 font-medium text-gray-700 truncate-hover cursor-help">标题: Wireless Mouse Ergonomic...</div>
+                                    <div class="truncate w-48 font-medium text-gray-700 truncate-hover cursor-help">标题: 人体工学无线鼠标</div>
                                     <div class="truncate w-48 text-xs text-gray-500 mt-1.5 truncate-hover cursor-help">卖点: 人体工学, 静音按键...</div>
                                 </td>
                                 <td class="px-5 py-4 align-top space-y-2">
@@ -380,6 +405,430 @@
                 </div>
                 <!-- 分页 -->
                 <div class="px-6 py-4 border-t border-gray-200 bg-white shrink-0 flex items-center justify-between text-sm text-gray-500 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)]"><div>共 <span class="font-bold text-gray-700">2</span> 条</div><div class="flex items-center space-x-4"><select class="border-gray-300 rounded text-sm py-1 focus:ring-blue-500"><option>20条/页</option><option>50条/页</option></select><nav class="isolate inline-flex -space-x-px rounded-md shadow-sm"><a href="#" class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"><i class="fa-solid fa-chevron-left text-xs"></i></a><a href="#" class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-blue-600">1</a><span class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300">...</span><a href="#" class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"><i class="fa-solid fa-chevron-right text-xs"></i></a></nav><div class="flex items-center space-x-2"><span>前往</span><input type="text" class="w-12 text-center border border-gray-300 rounded py-1 focus:ring-blue-500 outline-none"><span>页</span></div></div></div>
+            </div>
+
+            <!-- ================= TAB 5: 已完成 (布局优化版) ================= -->
+            <div id="tab-content-5" class="flex flex-col flex-1 min-h-0 hidden-tab">
+                <!-- 1. 搜索与筛选区 -->
+                <div class="bg-slate-50 border-b border-gray-200 p-5 shrink-0">
+                    <div class="flex flex-col space-y-4">
+                        <!-- 第一行：时间与健康度筛选 -->
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center space-x-6">
+                                <!-- 创建时间范围筛选 (默认今日) -->
+                                <div class="flex items-center space-x-2 text-sm hint-target" data-hint="默认筛选今日">
+                                    <span class="text-slate-500 font-bold text-xs uppercase tracking-wider">创建时间:</span>
+                                    <div class="flex items-center space-x-2">
+                                        <input type="date" value="2026-01-20" class="block w-32 px-2 py-1.5 text-xs border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700 font-mono shadow-sm cursor-pointer hover:bg-gray-50">
+                                        <span class="text-gray-400">-</span>
+                                        <input type="date" value="2026-01-20" class="block w-32 px-2 py-1.5 text-xs border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700 font-mono shadow-sm cursor-pointer hover:bg-gray-50">
+                                    </div>
+                                </div>
+                                <!-- 任务健康度筛选 -->
+                                <div class="flex items-center space-x-2 text-sm">
+                                    <span class="text-slate-500 font-bold text-xs uppercase tracking-wider">任务健康度:</span>
+                                    <div class="segmented-control">
+                                        <div class="segment-item active" onclick="selectSegment(this)">全部</div>
+                                        <div class="segment-item text-red-600" onclick="selectSegment(this)">需确认</div>
+                                        <div class="segment-item text-orange-500" onclick="selectSegment(this)">轻微异常</div>
+                                        <div class="segment-item text-green-600" onclick="selectSegment(this)">正常</div>
+                                        <div class="segment-item text-gray-400" onclick="selectSegment(this)">已确认</div>
+                                    </div>
+                                </div>
+                                <!-- 数值筛选 (扩展生成成功 + 宽度 + 等号) -->
+                                <div class="flex items-center space-x-2 text-sm">
+                                    <select class="block w-32 pl-2 pr-6 py-1.5 text-xs border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md shadow-sm bg-white cursor-pointer hover:bg-gray-50">
+                                        <option>审核通过</option>
+                                        <option>审核不通过</option>
+                                        <option>生成成功</option>
+                                        <option>生成失败</option>
+                                    </select>
+                                    <select class="block w-16 pl-2 pr-6 py-1.5 text-xs border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md shadow-sm bg-white cursor-pointer hover:bg-gray-50">
+                                        <option>≥</option>
+                                        <option>≤</option>
+                                        <option>=</option>
+                                    </select>
+                                    <input type="number" class="w-16 px-2 py-1.5 text-xs border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="张数">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 第二行：搜索与排序 -->
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center space-x-2 flex-1 max-w-lg">
+                                <span class="text-slate-500 font-bold text-xs uppercase tracking-wider flex-shrink-0">搜索:</span>
+                                <div class="flex shadow-sm rounded-md w-full">
+                                    <div class="relative flex-grow focus-within:z-10"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fa-solid fa-magnifying-glass text-gray-400 text-xs"></i></div><input type="text" class="focus:ring-blue-500 focus:border-blue-500 block w-full rounded-none rounded-l-md pl-9 sm:text-sm border-gray-300 py-1.5 text-xs" placeholder="输入系统SKU / TaskID / BatchID"></div>
+                                    <button class="relative -ml-px inline-flex items-center px-4 py-1.5 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:z-10">查询</button>
+                                    <button class="relative -ml-px inline-flex items-center px-3 py-1.5 border border-gray-300 bg-gray-50 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded-r-md focus:z-10">重置</button>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2 flex-shrink-0 ml-4"><span class="text-slate-500 font-bold text-xs uppercase tracking-wider">排序:</span><select class="block w-44 pl-3 pr-8 py-1.5 text-sm border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md shadow-sm bg-white cursor-pointer hover:bg-gray-50"><option>更新时间倒排</option><option>更新时间正排</option><option>创建时间倒排</option><option>创建时间正排</option></select></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. 按钮区 -->
+                <div class="bg-white px-5 py-3 border-b border-gray-100 flex items-center shrink-0 shadow-[0_2px_4px_rgba(0,0,0,0.02)] z-10 space-x-3">
+                    <button class="btn-primary hint-target" data-hint="复制选中任务并新建" onclick="openRerunModal('batch')"><i class="fa-regular fa-copy mr-1.5"></i>批量复制重跑</button>
+                    <button class="btn-default hint-target" data-hint="确认选中的异常任务" onclick="showToast('批量确认成功')"><i class="fa-solid fa-check-double mr-1.5"></i>批量确认</button>
+                </div>
+
+                <!-- 3. 列表区 -->
+                <div class="flex-1 overflow-auto bg-gray-50 px-5 pt-4 pb-10">
+                    <table class="min-w-full divide-y divide-gray-200 border border-gray-200 shadow-sm rounded-lg overflow-hidden bg-white">
+                        <thead class="bg-slate-50 text-slate-500 text-xs uppercase font-semibold tracking-wide">
+                            <tr>
+                                <th class="px-5 py-3 text-left w-10"><input type="checkbox" class="rounded text-blue-600 focus:ring-0 cursor-pointer"></th>
+                                <!-- 1. 基本信息 (复用 Tab4) -->
+                                <th class="px-5 py-3 text-left w-64">基本信息</th>
+                                <!-- 2. 生图全链路概览 (复用 Tab4) -->
+                                <th class="px-5 py-3 text-left w-52">生图全链路概览</th>
+                                <!-- 3. 任务健康度 (重构) -->
+                                <th class="px-5 py-3 text-left w-56">任务健康度</th>
+                                <!-- 4. 推送图片概览 (复用 Tab4) -->
+                                <th class="px-5 py-3 text-left w-40">推送图片概览</th>
+                                <!-- 5. 推送去向 (复用 Tab4) -->
+                                <th class="px-5 py-3 text-left w-28">推送去向</th>
+                                <!-- 6. 商品文本信息 (复用 Tab4) -->
+                                <th class="px-5 py-3 text-left w-56">商品文本信息</th>
+                                <!-- 7. 操作 (重构) -->
+                                <th class="px-5 py-3 text-left w-24">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 text-sm">
+                            
+                            <!-- Row 1: 需确认 (生成全失败) -->
+                            <tr class="group hover:bg-red-50/10 transition-colors">
+                                <td class="px-5 py-4 align-top"><input type="checkbox" class="rounded text-blue-600 cursor-pointer"></td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="font-bold text-slate-800 text-base">系统SKU: J010</div>
+                                    <div class="text-xs text-gray-500 font-mono mt-1">TaskID: T20260112-0010</div>
+                                    <div class="text-xs text-gray-400 font-mono">BatchID: B20260112-0004</div>
+                                    <div class="text-xs text-gray-400 mt-1">创建: 2026-01-20 14:00</div>
+                                    <div class="text-xs text-gray-400">更新: 2026-01-20 14:30</div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="flex flex-col space-y-1.5 text-xs text-gray-600 border-l-2 border-gray-200 pl-2">
+                                        <div class="flex justify-between w-40"><span>计划:</span><span class="font-mono">20张</span></div>
+                                        <div class="flex justify-between w-40"><span>生成:</span><span class="font-mono"><span class="text-green-600 font-bold">0</span> / <span class="text-red-500 font-bold">20失败</span></span></div>
+                                        <div class="flex justify-between w-40"><span>审核:</span><span class="font-mono"><span class="text-gray-400 font-bold">-</span> / <span class="text-gray-400 font-bold">-</span></span></div>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="flex flex-col items-start gap-2">
+                                        <div class="health-tag red">
+                                            <i class="fa-solid fa-xmark mr-1.5"></i>生成成功率 < 80%
+                                        </div>
+                                        <label class="confirm-toggle-wrapper red-mode" onclick="toggleConfirm(this)">
+                                            <div class="confirm-toggle-bg is-red">
+                                                <div class="confirm-toggle-dot"></div>
+                                                <span class="toggle-text">需确认</span>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="text-xs text-gray-400 italic">无推送图片</div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="text-xs text-gray-400 italic">无推送图片</div>
+                                </td>
+                                <td class="px-5 py-4 align-top cell-relative">
+                                    <div class="truncate w-48 font-medium text-gray-700 truncate-hover cursor-help">标题: 桑蚕丝奢华丝巾</div>
+                                    <div class="truncate w-48 text-xs text-gray-500 mt-1.5 truncate-hover cursor-help">卖点: 100%桑蚕丝, 手工卷边...</div>
+                                </td>
+                                <td class="px-5 py-4 align-top space-y-2 hint-target" data-hint="全部生成失败，无图可看">
+                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs block" onclick="openDrawer('drawer-view')">查看任务</button>
+                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs block" onclick="openRerunModal('J010')">复制重跑</button>
+                                </td>
+                            </tr>
+
+                            <!-- Row 2: 需确认 (审核全拒) -->
+                            <tr class="group hover:bg-red-50/10 transition-colors">
+                                <td class="px-5 py-4 align-top"><input type="checkbox" class="rounded text-blue-600 cursor-pointer"></td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="font-bold text-slate-800 text-base">系统SKU: K011</div>
+                                    <div class="text-xs text-gray-500 font-mono mt-1">TaskID: T20260112-0011</div>
+                                    <div class="text-xs text-gray-400 font-mono">BatchID: B20260112-0004</div>
+                                    <div class="text-xs text-gray-400 mt-1">创建: 2026-01-20 14:10</div>
+                                    <div class="text-xs text-gray-400">更新: 2026-01-20 14:45</div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="flex flex-col space-y-1.5 text-xs text-gray-600 border-l-2 border-gray-200 pl-2">
+                                        <div class="flex justify-between w-40"><span>计划:</span><span class="font-mono">20张</span></div>
+                                        <div class="flex justify-between w-40"><span>生成:</span><span class="font-mono"><span class="text-green-600 font-bold">20</span> / <span class="text-gray-300 font-bold">-</span></span></div>
+                                        <div class="flex justify-between w-40"><span>审核:</span><span class="font-mono"><span class="text-green-600 font-bold">0</span> / <span class="text-red-500 font-bold">20不通过</span></span></div>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="flex flex-col items-start gap-2">
+                                        <div class="health-tag red">
+                                            <i class="fa-solid fa-circle text-[6px] mr-1.5"></i>审核通过率 < 40%
+                                        </div>
+                                        <label class="confirm-toggle-wrapper red-mode" onclick="toggleConfirm(this)">
+                                            <div class="confirm-toggle-bg is-red">
+                                                <div class="confirm-toggle-dot"></div>
+                                                <span class="toggle-text">需确认</span>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="text-xs text-gray-400 italic">无推送图片</div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="text-xs text-gray-400 italic">无推送图片</div>
+                                </td>
+                                <td class="px-5 py-4 align-top cell-relative">
+                                    <div class="truncate w-48 font-medium text-gray-700 truncate-hover cursor-help">标题: 男士皮质钱包</div>
+                                    <div class="truncate w-48 text-xs text-gray-500 mt-1.5 truncate-hover cursor-help">卖点: 真皮, 多卡位, 商务风...</div>
+                                </td>
+                                <td class="px-5 py-4 align-top space-y-2">
+                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs block" onclick="openDrawer('drawer-view')">查看任务</button>
+                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs block hint-target" data-hint="查看生成结果" onclick="openReviewWorkbench('readonly', '已完成任务')">查看生图</button>
+                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs block" onclick="openRerunModal('K011')">复制重跑</button>
+                                </td>
+                            </tr>
+
+                            <!-- Row 3: 需确认 (混合异常: 生成低 + 审核低) -->
+                            <tr class="group hover:bg-red-50/10 transition-colors">
+                                <td class="px-5 py-4 align-top"><input type="checkbox" class="rounded text-blue-600 cursor-pointer"></td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="font-bold text-slate-800 text-base">系统SKU: X099</div>
+                                    <div class="text-xs text-gray-500 font-mono mt-1">TaskID: T20260112-0099</div>
+                                    <div class="text-xs text-gray-400 font-mono">BatchID: B20260112-0004</div>
+                                    <div class="text-xs text-gray-400 mt-1">创建: 2026-01-20 14:15</div>
+                                    <div class="text-xs text-gray-400">更新: 2026-01-20 14:50</div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="flex flex-col space-y-1.5 text-xs text-gray-600 border-l-2 border-gray-200 pl-2">
+                                        <div class="flex justify-between w-40"><span>计划:</span><span class="font-mono">20张</span></div>
+                                        <div class="flex justify-between w-40"><span>生成:</span><span class="font-mono"><span class="text-green-600 font-bold">12</span> / <span class="text-red-500 font-bold">8失败</span></span></div>
+                                        <div class="flex justify-between w-40"><span>审核:</span><span class="font-mono"><span class="text-green-600 font-bold">4</span> / <span class="text-red-500 font-bold">8不通过</span></span></div>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="flex flex-col items-start gap-2">
+                                        <div class="health-tag red">
+                                            <i class="fa-solid fa-xmark mr-1.5"></i>生成成功率 < 80%
+                                        </div>
+                                        <div class="health-tag red">
+                                            <i class="fa-solid fa-circle text-[6px] mr-1.5"></i>审核通过率 < 40%
+                                        </div>
+                                        <label class="confirm-toggle-wrapper red-mode" onclick="toggleConfirm(this)">
+                                            <div class="confirm-toggle-bg is-red">
+                                                <div class="confirm-toggle-dot"></div>
+                                                <span class="toggle-text">需确认</span>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="flex items-center -space-x-2 py-1 grayscale opacity-80 cursor-not-allowed">
+                                        <img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white">
+                                        <div class="w-9 h-9 rounded-lg bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-gray-500">+3</div>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="flex items-center"><i class="fa-solid fa-server text-gray-400 mr-2"></i><span class="text-xs text-gray-700">ERP素材库</span></div>
+                                </td>
+                                <td class="px-5 py-4 align-top cell-relative">
+                                    <div class="truncate w-48 font-medium text-gray-700 truncate-hover cursor-help">标题: 复杂的多功能钥匙扣</div>
+                                    <div class="truncate w-48 text-xs text-gray-500 mt-1.5 truncate-hover cursor-help">卖点: 复杂结构, 多功能...</div>
+                                </td>
+                                <td class="px-5 py-4 align-top space-y-2">
+                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs block" onclick="openDrawer('drawer-view')">查看任务</button>
+                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs block hint-target" data-hint="查看生成结果" onclick="openReviewWorkbench('readonly', '已完成任务')">查看生图</button>
+                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs block" onclick="openRerunModal('X099')">复制重跑</button>
+                                </td>
+                            </tr>
+
+                            <!-- Row 4: NEW - 轻微异常 (仅审核低) -->
+                            <tr class="group hover:bg-orange-50/10 transition-colors">
+                                <td class="px-5 py-4 align-top"><input type="checkbox" class="rounded text-blue-600 cursor-pointer"></td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="font-bold text-slate-800 text-base">系统SKU: Y055</div>
+                                    <div class="text-xs text-gray-500 font-mono mt-1">TaskID: T20260112-0055</div>
+                                    <div class="text-xs text-gray-400 font-mono">BatchID: B20260112-0004</div>
+                                    <div class="text-xs text-gray-400 mt-1">创建: 2026-01-20 14:18</div>
+                                    <div class="text-xs text-gray-400">更新: 2026-01-20 14:55</div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="flex flex-col space-y-1.5 text-xs text-gray-600 border-l-2 border-gray-200 pl-2">
+                                        <div class="flex justify-between w-40"><span>计划:</span><span class="font-mono">20张</span></div>
+                                        <div class="flex justify-between w-40"><span>生成:</span><span class="font-mono"><span class="text-green-600 font-bold">20</span> / <span class="text-gray-300 font-bold">-</span></span></div>
+                                        <div class="flex justify-between w-40"><span>审核:</span><span class="font-mono"><span class="text-blue-600 font-bold">10</span> / <span class="text-gray-400 font-bold">10不通过</span></span></div>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="health-tag orange">
+                                        <i class="fa-solid fa-triangle-exclamation text-[10px] mr-1.5"></i>40% ≤ 审核通过率 < 60%
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="flex items-center -space-x-2 py-1 grayscale opacity-80 cursor-not-allowed">
+                                        <img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white">
+                                        <img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white">
+                                        <div class="w-9 h-9 rounded-lg bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-gray-500">+8</div>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="flex items-center"><i class="fa-solid fa-server text-gray-400 mr-2"></i><span class="text-xs text-gray-700">ERP素材库</span></div>
+                                </td>
+                                <td class="px-5 py-4 align-top cell-relative">
+                                    <div class="truncate w-48 font-medium text-gray-700 truncate-hover cursor-help">标题: 可拆卸式自动车车铃</div>
+                                    <div class="truncate w-48 text-xs text-gray-500 mt-1.5 truncate-hover cursor-help">卖点: 简单好用...</div>
+                                </td>
+                                <td class="px-5 py-4 align-top space-y-2">
+                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs block" onclick="openDrawer('drawer-view')">查看任务</button>
+                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs block" onclick="openReviewWorkbench('readonly', '已完成任务')">查看生图</button>
+                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs block" onclick="openRerunModal('Y055')">复制重跑</button>
+                                </td>
+                            </tr>
+
+                            <!-- Row 5: 双重轻微异常 (混合: 生成偏低 + 审核偏低) -->
+                            <tr class="group hover:bg-orange-50/10 transition-colors">
+                                <td class="px-5 py-4 align-top"><input type="checkbox" class="rounded text-blue-600 cursor-pointer"></td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="font-bold text-slate-800 text-base">系统SKU: L012</div>
+                                    <div class="text-xs text-gray-500 font-mono mt-1">TaskID: T20260112-0012</div>
+                                    <div class="text-xs text-gray-400 font-mono">BatchID: B20260112-0004</div>
+                                    <div class="text-xs text-gray-400 mt-1">创建: 2026-01-20 14:20</div>
+                                    <div class="text-xs text-gray-400">更新: 2026-01-20 15:00</div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="flex flex-col space-y-1.5 text-xs text-gray-600 border-l-2 border-gray-200 pl-2">
+                                        <div class="flex justify-between w-40"><span>计划:</span><span class="font-mono">20张</span></div>
+                                        <div class="flex justify-between w-40"><span>生成:</span><span class="font-mono"><span class="text-green-600 font-bold">17</span> / <span class="text-red-500 font-bold">3失败</span></span></div>
+                                        <div class="flex justify-between w-40"><span>审核:</span><span class="font-mono"><span class="text-blue-600 font-bold">8</span> / <span class="text-gray-400 font-bold">9不通过</span></span></div>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="flex flex-col items-start space-y-1">
+                                        <div class="health-tag orange">
+                                            <i class="fa-solid fa-triangle-exclamation text-[10px] mr-1.5"></i>80% ≤ 生成成功率 < 100%
+                                        </div>
+                                        <div class="health-tag orange">
+                                            <i class="fa-solid fa-triangle-exclamation text-[10px] mr-1.5"></i>40% ≤ 审核通过率 < 60%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="flex items-center -space-x-2 py-1 grayscale opacity-80 cursor-not-allowed">
+                                        <img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white">
+                                        <img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white">
+                                        <div class="w-9 h-9 rounded-lg bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-gray-500">+6</div>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="flex items-center"><i class="fa-solid fa-server text-gray-400 mr-2"></i><span class="text-xs text-gray-700">ERP素材库</span></div>
+                                </td>
+                                <td class="px-5 py-4 align-top cell-relative">
+                                    <div class="truncate w-48 font-medium text-gray-700 truncate-hover cursor-help">标题: 通气网面夏天跑步鞋</div>
+                                    <div class="truncate w-48 text-xs text-gray-500 mt-1.5 truncate-hover cursor-help">卖点: 透气网面, 缓震鞋底...</div>
+                                </td>
+                                <td class="px-5 py-4 align-top space-y-2">
+                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs block" onclick="openDrawer('drawer-view')">查看任务</button>
+                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs block" onclick="openReviewWorkbench('readonly', '已完成任务')">查看生图</button>
+                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs block" onclick="openRerunModal('L012')">复制重跑</button>
+                                </td>
+                            </tr>
+
+                            <!-- Row 6: 正常 -->
+                            <tr class="group hover:bg-blue-50/10 transition-colors">
+                                <td class="px-5 py-4 align-top"><input type="checkbox" class="rounded text-blue-600 cursor-pointer"></td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="font-bold text-slate-800 text-base">系统SKU: M013</div>
+                                    <div class="text-xs text-gray-500 font-mono mt-1">TaskID: T20260112-0013</div>
+                                    <div class="text-xs text-gray-400 font-mono">BatchID: B20260112-0004</div>
+                                    <div class="text-xs text-gray-400 mt-1">创建: 2026-01-20 14:30</div>
+                                    <div class="text-xs text-gray-400">更新: 2026-01-20 15:20</div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="flex flex-col space-y-1.5 text-xs text-gray-600 border-l-2 border-gray-200 pl-2">
+                                        <div class="flex justify-between w-40"><span>计划:</span><span class="font-mono">20张</span></div>
+                                        <div class="flex justify-between w-40"><span>生成:</span><span class="font-mono"><span class="text-green-600 font-bold">20</span> / <span class="text-gray-300 font-bold">-</span></span></div>
+                                        <div class="flex justify-between w-40"><span>审核:</span><span class="font-mono"><span class="text-blue-600 font-bold">18</span> / <span class="text-gray-400 font-bold">2不通过</span></span></div>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-green-100 text-green-700 border border-green-200">
+                                        正常
+                                    </span>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="flex items-center -space-x-2 py-1 grayscale opacity-80 cursor-not-allowed">
+                                        <img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white">
+                                        <img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white">
+                                        <div class="w-9 h-9 rounded-lg bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-gray-500">+16</div>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="flex items-center"><i class="fa-solid fa-server text-gray-400 mr-2"></i><span class="text-xs text-gray-700">ERP素材库</span></div>
+                                </td>
+                                <td class="px-5 py-4 align-top cell-relative">
+                                    <div class="truncate w-48 font-medium text-gray-700 truncate-hover cursor-help">标题: 纯棉基本款T恤</div>
+                                    <div class="truncate w-48 text-xs text-gray-500 mt-1.5 truncate-hover cursor-help">卖点: 纯棉, 亲肤, 多色可选...</div>
+                                </td>
+                                <td class="px-5 py-4 align-top space-y-2">
+                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs block" onclick="openDrawer('drawer-view')">查看任务</button>
+                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs block" onclick="openReviewWorkbench('readonly', '已完成任务')">查看生图</button>
+                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs block" onclick="openRerunModal('M013')">复制重跑</button>
+                                </td>
+                            </tr>
+                            
+                             <!-- Row 7: 已确认 (原需确认，开关已开启，正常显示) -->
+                            <tr class="group hover:bg-blue-50/10 transition-colors">
+                                <td class="px-5 py-4 align-top"><input type="checkbox" class="rounded text-blue-600 cursor-pointer"></td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="font-bold text-slate-800 text-base">系统SKU: N014</div>
+                                    <div class="text-xs text-gray-500 font-mono mt-1">TaskID: T20260112-0014</div>
+                                    <div class="text-xs text-gray-400 font-mono">BatchID: B20260112-0004</div>
+                                    <div class="text-xs text-gray-400 mt-1">创建: 2026-01-20 12:00</div>
+                                    <div class="text-xs text-gray-400">更新: 2026-01-20 13:00</div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="flex flex-col space-y-1.5 text-xs text-gray-600 border-l-2 border-gray-200 pl-2">
+                                        <div class="flex justify-between w-40"><span>计划:</span><span class="font-mono">20张</span></div>
+                                        <div class="flex justify-between w-40"><span>生成:</span><span class="font-mono"><span class="text-green-600 font-bold">0</span> / <span class="text-red-500 font-bold">20失败</span></span></div>
+                                        <div class="flex justify-between w-40"><span>审核:</span><span class="font-mono"><span class="text-gray-400 font-bold">-</span> / <span class="text-gray-400 font-bold">-</span></span></div>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="flex flex-col items-start gap-2">
+                                        <div class="health-tag red opacity-75">
+                                            <i class="fa-solid fa-xmark mr-1.5"></i>生成成功率 < 80%
+                                        </div>
+                                        <label class="confirm-toggle-wrapper green-mode" onclick="toggleConfirm(this)">
+                                            <div class="confirm-toggle-bg is-green">
+                                                <div class="confirm-toggle-dot"></div>
+                                                <span class="toggle-text">已确认</span>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="text-xs text-gray-400 italic">无推送图片</div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="text-xs text-gray-400 italic">无推送图片</div>
+                                </td>
+                                <td class="px-5 py-4 align-top cell-relative">
+                                    <div class="truncate w-48 font-medium text-gray-700 truncate-hover cursor-help">标题: 小米17promax手机.</div>
+                                    <div class="truncate w-48 text-xs text-gray-500 mt-1.5 truncate-hover cursor-help">卖点: 背屏...</div>
+                                </td>
+                                <td class="px-5 py-4 align-top space-y-2 hint-target" data-hint="全部生成失败，无图可看">
+                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs block" onclick="openDrawer('drawer-view')">查看任务</button>
+                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs block" onclick="openRerunModal('N014')">复制重跑</button>
+                                </td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+                 <!-- 分页 -->
+                <div class="px-6 py-4 border-t border-gray-200 bg-white shrink-0 flex items-center justify-between text-sm text-gray-500 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)]"><div>共 <span class="font-bold text-gray-700">20</span> 条</div><div class="flex items-center space-x-4"><select class="border-gray-300 rounded text-sm py-1 focus:ring-blue-500"><option>20条/页</option><option>50条/页</option></select><nav class="isolate inline-flex -space-x-px rounded-md shadow-sm"><a href="#" class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"><i class="fa-solid fa-chevron-left text-xs"></i></a><a href="#" class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-blue-600">1</a><span class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300">...</span><a href="#" class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"><i class="fa-solid fa-chevron-right text-xs"></i></a></nav><div class="flex items-center space-x-2"><span>前往</span><input type="text" class="w-12 text-center border border-gray-300 rounded py-1 focus:ring-blue-500 outline-none"><span>页</span></div></div></div>
             </div>
 
         </div>
@@ -448,8 +897,8 @@
                         <div class="text-sm font-bold text-slate-800 select-all">E005</div>
                     </div>
                     <div>
-                        <div class="text-[10px] text-gray-400 uppercase mb-1">商品标题</div>
-                        <textarea class="w-full text-xs text-gray-600 leading-tight border border-gray-200 rounded p-2 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 resize-y" rows="3" readonly>Coffee Maker Espresso 20Bar Pressure Pump with Milk Frother Wand</textarea>
+                        <div class="text-[10px] text-gray-400 uppercase mb-1">商品中文标题</div>
+                        <textarea class="w-full text-xs text-gray-600 leading-tight border border-gray-200 rounded p-2 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 resize-y" rows="3" readonly>咖啡机配备20巴压力泵和奶泡器</textarea>
                     </div>
                     <div>
                         <div class="flex items-center justify-between mb-1">
@@ -732,6 +1181,20 @@
         </div>
     </div>
 
+    <!-- Modal G: Rerun Confirmation -->
+    <div id="modal-rerun-confirm" class="modal fixed inset-0 z-[200] flex items-center justify-center p-4" style="background-color: rgba(0,0,0,0.5);">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-sm overflow-hidden transform transition-all">
+            <div class="p-6">
+                <h3 class="text-lg font-bold text-gray-900 mb-2">确认复制重跑?</h3>
+                <p class="text-sm text-gray-600">将复制该任务的配置并创建一个新任务。</p>
+            </div>
+            <div class="bg-gray-50 px-6 py-3 flex justify-end space-x-3">
+                <button class="px-4 py-2 border border-gray-300 bg-white rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50" onclick="closeRerunModal()">取消</button>
+                <button class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700" onclick="confirmRerun()">确认</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ================= 详情对比弹窗 (L3 - V40 细节微调版) ================= -->
     <div id="detail-modal" class="modal fixed inset-0 z-[110] bg-black/95 flex flex-col hidden overflow-hidden">
         <!-- Header (V40 Center Title) -->
@@ -850,8 +1313,8 @@
                             <div class="text-sm font-bold text-gray-200 select-all">E005</div>
                         </div>
                         <div>
-                            <div class="text-[10px] text-gray-400 uppercase mb-1">商品标题</div>
-                            <textarea class="w-full text-xs text-gray-300 bg-slate-800 border-none rounded p-2 resize-y focus:ring-1 focus:ring-blue-500" rows="3" readonly>Coffee Maker Espresso 20Bar Pressure Pump with Milk Frother Wand</textarea>
+                            <div class="text-[10px] text-gray-400 uppercase mb-1">商品中文标题</div>
+                            <textarea class="w-full text-xs text-gray-300 bg-slate-800 border-none rounded p-2 resize-y focus:ring-1 focus:ring-blue-500" rows="3" readonly>咖啡机配备20巴压力泵和奶泡器</textarea>
                         </div>
                         <div>
                             <div class="text-[10px] text-gray-400 uppercase mb-1">中文核心卖点</div>
@@ -893,12 +1356,12 @@
     <!-- ================= 交互组件 (Drawers & Modals from Tab 1/2) ================= -->
     <div id="overlay" class="modal fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-[60]" onclick="closeAll()"></div>
     <!-- Drawer A1 Add -->
-    <div id="drawer-add" class="drawer fixed inset-y-0 right-0 z-[70] w-[480px] bg-white shadow-2xl flex flex-col"><div class="h-14 flex items-center justify-between px-6 border-b border-gray-200"><h3 class="text-lg font-bold text-slate-800">新增任务</h3><button onclick="closeAll()" class="text-gray-400 hover:text-red-500"><i class="fa-solid fa-xmark text-xl"></i></button></div><div class="flex-1 p-6 space-y-6 overflow-y-auto"><div><label class="block text-sm font-medium text-gray-700 mb-1">系统SKU <span class="text-red-500">*</span></label><div class="flex rounded-md shadow-sm"><input type="text" placeholder="输入SKU" class="flex-1 rounded-l-md border-gray-300 border px-3 py-2 text-sm"><button class="bg-gray-50 border border-l-0 border-gray-300 px-4 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-r-md">查询</button></div></div><div><label class="block text-sm font-medium text-gray-700 mb-1">商品标题 <span class="text-red-500">*</span></label><textarea rows="2" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"></textarea></div><div><label class="block text-sm font-medium text-gray-700 mb-1">中文核心卖点 <span class="text-red-500">*</span></label><textarea rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"></textarea></div><div><label class="block text-sm font-medium text-gray-700 mb-1">参考图 (1-5张) <span class="text-red-500">*</span></label><div class="border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center text-gray-500 hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition-colors bg-gray-50"><i class="fa-solid fa-cloud-arrow-up text-3xl mb-2 text-gray-400"></i><p class="text-sm font-medium">点击上传 / 拖拽 / 粘贴</p><p class="text-xs text-gray-400 mt-1">已上传 0/5 张</p></div></div><div class="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-4"><div class="flex justify-between items-center"><label class="text-sm font-medium text-slate-700">模型供应商</label><select class="text-sm border-gray-300 rounded px-2 py-1 w-48 bg-white" disabled><option selected>LinkFox</option></select></div><div class="grid grid-cols-1 gap-3"><div class="flex items-center justify-between"><label class="text-sm text-gray-600">场景图 (缩写: 场)</label><div class="flex items-center"><input type="number" value="6" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center mx-2"><span class="text-xs text-gray-400">张</span></div></div><div class="flex items-center justify-between"><label class="text-sm text-gray-600">特写图-白底 (缩写: 白特)</label><div class="flex items-center"><input type="number" value="4" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center mx-2"><span class="text-xs text-gray-400">张</span></div></div><div class="flex items-center justify-between"><label class="text-sm text-gray-600">特写图-非白底 (缩写: 特)</label><div class="flex items-center"><input type="number" value="2" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center mx-2"><span class="text-xs text-gray-400">张</span></div></div><div class="flex items-center justify-between"><label class="text-sm text-gray-600">卖点图 (缩写: 卖)</label><div class="flex items-center"><input type="number" value="4" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center mx-2"><span class="text-xs text-gray-400">张</span></div></div></div><div class="border-t border-gray-200 pt-3 flex justify-between text-xs text-gray-500"><span><i class="fa-solid fa-circle-info mr-1"></i>预计总张数: 14 张</span><span class="text-blue-600 font-medium">今日剩余额度: 150 张</span></div></div></div><div class="p-4 border-t border-gray-200 flex justify-between items-center bg-gray-50"><div class="flex flex-col items-start"><div class="flex rounded-md shadow-sm"><button class="px-3 py-1.5 border border-gray-300 rounded-l-md bg-white text-gray-600 hover:bg-gray-100 border-r-0"><i class="fa-solid fa-chevron-left"></i></button><button class="px-3 py-1.5 border border-gray-300 rounded-r-md bg-white text-gray-600 hover:bg-gray-100"><i class="fa-solid fa-chevron-right"></i></button></div><span class="text-[10px] text-gray-400 mt-1 ml-1">切换自动保存</span></div><div class="space-x-2 flex"><button class="px-3 py-2 border border-gray-300 bg-white rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50" onclick="closeAll()">取消</button><button class="px-3 py-2 border border-blue-200 bg-blue-50 text-blue-700 rounded-md text-sm font-medium hover:bg-blue-100">保存为待提交</button><button class="px-3 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 shadow-sm">保存并提交生图</button></div></div></div>
+    <div id="drawer-add" class="drawer fixed inset-y-0 right-0 z-[70] w-[480px] bg-white shadow-2xl flex flex-col"><div class="h-14 flex items-center justify-between px-6 border-b border-gray-200"><h3 class="text-lg font-bold text-slate-800">新增任务</h3><button onclick="closeAll()" class="text-gray-400 hover:text-red-500"><i class="fa-solid fa-xmark text-xl"></i></button></div><div class="flex-1 p-6 space-y-6 overflow-y-auto"><div><label class="block text-sm font-medium text-gray-700 mb-1">系统SKU <span class="text-red-500">*</span></label><div class="flex rounded-md shadow-sm"><input type="text" placeholder="输入SKU" class="flex-1 rounded-l-md border-gray-300 border px-3 py-2 text-sm"><button class="bg-gray-50 border border-l-0 border-gray-300 px-4 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-r-md">查询</button></div></div><div><label class="block text-sm font-medium text-gray-700 mb-1">商品中文标题 <span class="text-red-500">*</span></label><textarea rows="2" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"></textarea></div><div><label class="block text-sm font-medium text-gray-700 mb-1">中文核心卖点 <span class="text-red-500">*</span></label><textarea rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"></textarea></div><div><label class="block text-sm font-medium text-gray-700 mb-1">参考图 (1-5张) <span class="text-red-500">*</span></label><div class="border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center text-gray-500 hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition-colors bg-gray-50"><i class="fa-solid fa-cloud-arrow-up text-3xl mb-2 text-gray-400"></i><p class="text-sm font-medium">点击上传 / 拖拽 / 粘贴</p><p class="text-xs text-gray-400 mt-1">已上传 0/5 张</p></div></div><div class="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-4"><div class="flex justify-between items-center"><label class="text-sm font-medium text-slate-700">模型供应商</label><select class="text-sm border-gray-300 rounded px-2 py-1 w-48 bg-white" disabled><option selected>LinkFox</option></select></div><div class="grid grid-cols-1 gap-3"><div class="flex items-center justify-between"><label class="text-sm text-gray-600">场景图 (缩写: 场)</label><div class="flex items-center"><input type="number" value="6" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center mx-2"><span class="text-xs text-gray-400">张</span></div></div><div class="flex items-center justify-between"><label class="text-sm text-gray-600">特写图-白底 (缩写: 白特)</label><div class="flex items-center"><input type="number" value="4" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center mx-2"><span class="text-xs text-gray-400">张</span></div></div><div class="flex items-center justify-between"><label class="text-sm text-gray-600">特写图-非白底 (缩写: 特)</label><div class="flex items-center"><input type="number" value="2" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center mx-2"><span class="text-xs text-gray-400">张</span></div></div><div class="flex items-center justify-between"><label class="text-sm text-gray-600">卖点图 (缩写: 卖)</label><div class="flex items-center"><input type="number" value="4" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center mx-2"><span class="text-xs text-gray-400">张</span></div></div></div><div class="border-t border-gray-200 pt-3 flex justify-between text-xs text-gray-500"><span><i class="fa-solid fa-circle-info mr-1"></i>预计总张数: 14 张</span><span class="text-blue-600 font-medium">今日剩余额度: 150 张</span></div></div></div><div class="p-4 border-t border-gray-200 flex justify-between items-center bg-gray-50"><div class="flex flex-col items-start"><div class="flex rounded-md shadow-sm"><button class="px-3 py-1.5 border border-gray-300 rounded-l-md bg-white text-gray-600 hover:bg-gray-100 border-r-0"><i class="fa-solid fa-chevron-left"></i></button><button class="px-3 py-1.5 border border-gray-300 rounded-r-md bg-white text-gray-600 hover:bg-gray-100"><i class="fa-solid fa-chevron-right"></i></button></div><span class="text-[10px] text-gray-400 mt-1 ml-1">切换自动保存</span></div><div class="space-x-2 flex"><button class="px-3 py-2 border border-gray-300 bg-white rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50" onclick="closeAll()">取消</button><button class="px-3 py-2 border border-blue-200 bg-blue-50 text-blue-700 rounded-md text-sm font-medium hover:bg-blue-100">保存为待提交</button><button class="px-3 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 shadow-sm">保存并提交生图</button></div></div></div>
     <!-- Drawer A2 Edit -->
-    <div id="drawer-edit" class="drawer fixed inset-y-0 right-0 z-[70] w-[480px] bg-white shadow-2xl flex flex-col"><div class="h-14 flex items-center justify-between px-6 border-b border-gray-200 bg-blue-50/50"><div><h3 class="text-lg font-bold text-slate-800">编辑任务</h3><span class="text-xs text-gray-500 font-mono">ID: T20260112-0001</span></div><button onclick="closeAll()" class="text-gray-400 hover:text-red-500"><i class="fa-solid fa-xmark text-xl"></i></button></div><div class="flex-1 p-6 space-y-6 overflow-y-auto"><div><label class="block text-sm font-medium text-gray-700 mb-1">系统SKU <span class="text-red-500">*</span></label><div class="flex rounded-md shadow-sm"><input type="text" value="A001" class="flex-1 rounded-l-md border-gray-300 border focus:ring-blue-500 focus:border-blue-500 px-3 py-2 text-sm"><button class="bg-gray-50 border border-l-0 border-gray-300 px-4 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-r-md">查询</button></div></div><div><label class="block text-sm font-medium text-gray-700 mb-1">商品标题 <span class="text-red-500">*</span></label><textarea rows="2" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 resize-y">Red Vacuum Cup Stainless Steel</textarea></div><div><label class="block text-sm font-medium text-gray-700 mb-1">中文核心卖点 <span class="text-red-500">*</span></label><textarea rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500">保温效果好, 双层防烫, 食品级材质, 易于清洗</textarea></div><div><label class="block text-sm font-medium text-gray-700 mb-1">参考图 (1-5张) <span class="text-red-500">*</span></label><div class="border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center text-gray-500 hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition-colors bg-gray-50"><div class="flex space-x-2 mb-2"><img src="https://placehold.co/40x40/eef2ff/334155" class="rounded border border-gray-300"><img src="https://placehold.co/40x40/eef2ff/334155" class="rounded border border-gray-300"></div><p class="text-sm font-medium">点击上传 / 拖拽 / 粘贴</p><p class="text-xs text-gray-400 mt-1">已上传 2/5 张</p></div></div><div class="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-4"><div class="flex justify-between items-center"><label class="text-sm font-medium text-slate-700">模型供应商</label><select class="text-sm border-gray-300 rounded px-2 py-1 w-48 bg-white" disabled><option selected>LinkFox</option></select></div><div class="grid grid-cols-1 gap-3"><div class="flex items-center justify-between"><label class="text-sm text-gray-600">场景图 (缩写: 场)</label><div class="flex items-center"><input type="number" value="6" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center mx-2"><span class="text-xs text-gray-400">张</span></div></div><div class="flex items-center justify-between"><label class="text-sm text-gray-600">特写图-白底 (缩写: 白特)</label><div class="flex items-center"><input type="number" value="4" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center mx-2"><span class="text-xs text-gray-400">张</span></div></div><div class="flex items-center justify-between"><label class="text-sm text-gray-600">特写图-非白底 (缩写: 特)</label><div class="flex items-center"><input type="number" value="2" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center mx-2"><span class="text-xs text-gray-400">张</span></div></div><div class="flex items-center justify-between"><label class="text-sm text-gray-600">卖点图 (缩写: 卖)</label><div class="flex items-center"><input type="number" value="4" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center mx-2"><span class="text-xs text-gray-400">张</span></div></div></div><div class="border-t border-gray-200 pt-3 flex justify-between text-xs text-gray-500"><span><i class="fa-solid fa-circle-info mr-1"></i>预计总张数: 14 张</span><span class="text-blue-600 font-medium">今日剩余额度: 150 张</span></div></div></div><div class="p-4 border-t border-gray-200 flex justify-between items-center bg-gray-50"><div class="flex flex-col items-start"><div class="flex rounded-md shadow-sm"><button class="px-3 py-1.5 border border-gray-300 rounded-l-md bg-white text-gray-600 hover:bg-gray-100 border-r-0"><i class="fa-solid fa-chevron-left"></i></button><button class="px-3 py-1.5 border border-gray-300 rounded-r-md bg-white text-gray-600 hover:bg-gray-100"><i class="fa-solid fa-chevron-right"></i></button></div><span class="text-[10px] text-gray-400 mt-1 ml-1">切换自动保存</span></div><div class="space-x-2 flex"><button class="px-3 py-2 border border-gray-300 bg-white rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50" onclick="closeAll()">取消</button><button class="px-3 py-2 border border-blue-200 bg-blue-50 text-blue-700 rounded-md text-sm font-medium hover:bg-blue-100">保存为待提交</button><button class="px-3 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 shadow-sm">保存并提交生图</button></div></div></div>
+    <div id="drawer-edit" class="drawer fixed inset-y-0 right-0 z-[70] w-[480px] bg-white shadow-2xl flex flex-col"><div class="h-14 flex items-center justify-between px-6 border-b border-gray-200 bg-blue-50/50"><div><h3 class="text-lg font-bold text-slate-800">编辑任务</h3><span class="text-xs text-gray-500 font-mono">ID: T20260112-0001</span></div><button onclick="closeAll()" class="text-gray-400 hover:text-red-500"><i class="fa-solid fa-xmark text-xl"></i></button></div><div class="flex-1 p-6 space-y-6 overflow-y-auto"><div><label class="block text-sm font-medium text-gray-700 mb-1">系统SKU <span class="text-red-500">*</span></label><div class="flex rounded-md shadow-sm"><input type="text" value="A001" class="flex-1 rounded-l-md border-gray-300 border focus:ring-blue-500 focus:border-blue-500 px-3 py-2 text-sm"><button class="bg-gray-50 border border-l-0 border-gray-300 px-4 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-r-md">查询</button></div></div><div><label class="block text-sm font-medium text-gray-700 mb-1">商品中文标题 <span class="text-red-500">*</span></label><textarea rows="2" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 resize-y">红色不锈钢保温杯500ml防漏设计</textarea></div><div><label class="block text-sm font-medium text-gray-700 mb-1">中文核心卖点 <span class="text-red-500">*</span></label><textarea rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500">保温效果好, 双层防烫, 食品级材质, 易于清洗</textarea></div><div><label class="block text-sm font-medium text-gray-700 mb-1">参考图 (1-5张) <span class="text-red-500">*</span></label><div class="border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center text-gray-500 hover:border-blue-500 hover:bg-blue-50 cursor-pointer transition-colors bg-gray-50"><div class="flex space-x-2 mb-2"><img src="https://placehold.co/40x40/eef2ff/334155" class="rounded border border-gray-300"><img src="https://placehold.co/40x40/eef2ff/334155" class="rounded border border-gray-300"></div><p class="text-sm font-medium">点击上传 / 拖拽 / 粘贴</p><p class="text-xs text-gray-400 mt-1">已上传 2/5 张</p></div></div><div class="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-4"><div class="flex justify-between items-center"><label class="text-sm font-medium text-slate-700">模型供应商</label><select class="text-sm border-gray-300 rounded px-2 py-1 w-48 bg-white" disabled><option selected>LinkFox</option></select></div><div class="grid grid-cols-1 gap-3"><div class="flex items-center justify-between"><label class="text-sm text-gray-600">场景图 (缩写: 场)</label><div class="flex items-center"><input type="number" value="6" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center mx-2"><span class="text-xs text-gray-400">张</span></div></div><div class="flex items-center justify-between"><label class="text-sm text-gray-600">特写图-白底 (缩写: 白特)</label><div class="flex items-center"><input type="number" value="4" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center mx-2"><span class="text-xs text-gray-400">张</span></div></div><div class="flex items-center justify-between"><label class="text-sm text-gray-600">特写图-非白底 (缩写: 特)</label><div class="flex items-center"><input type="number" value="2" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center mx-2"><span class="text-xs text-gray-400">张</span></div></div><div class="flex items-center justify-between"><label class="text-sm text-gray-600">卖点图 (缩写: 卖)</label><div class="flex items-center"><input type="number" value="4" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center mx-2"><span class="text-xs text-gray-400">张</span></div></div></div><div class="border-t border-gray-200 pt-3 flex justify-between text-xs text-gray-500"><span><i class="fa-solid fa-circle-info mr-1"></i>预计总张数: 14 张</span><span class="text-blue-600 font-medium">今日剩余额度: 150 张</span></div></div></div><div class="p-4 border-t border-gray-200 flex justify-between items-center bg-gray-50"><div class="flex flex-col items-start"><div class="flex rounded-md shadow-sm"><button class="px-3 py-1.5 border border-gray-300 rounded-l-md bg-white text-gray-600 hover:bg-gray-100 border-r-0"><i class="fa-solid fa-chevron-left"></i></button><button class="px-3 py-1.5 border border-gray-300 rounded-r-md bg-white text-gray-600 hover:bg-gray-100"><i class="fa-solid fa-chevron-right"></i></button></div><span class="text-[10px] text-gray-400 mt-1 ml-1">切换自动保存</span></div><div class="space-x-2 flex"><button class="px-3 py-2 border border-gray-300 bg-white rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50" onclick="closeAll()">取消</button><button class="px-3 py-2 border border-blue-200 bg-blue-50 text-blue-700 rounded-md text-sm font-medium hover:bg-blue-100">保存为待提交</button><button class="px-3 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 shadow-sm">保存并提交生图</button></div></div></div>
 
     <!-- Drawer A3 View (Restored for Tab 2/3) -->
-    <div id="drawer-view" class="drawer fixed inset-y-0 right-0 z-[70] w-[480px] bg-white shadow-2xl flex flex-col"><div class="h-14 flex items-center justify-between px-6 border-b border-gray-200 bg-slate-50"><div><h3 class="text-lg font-bold text-slate-800">查看任务</h3><span class="text-xs text-gray-500 font-mono">ID: T20260112-0003</span></div><button onclick="closeAll()" class="text-gray-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button></div><div class="flex-1 p-6 space-y-6 overflow-y-auto"><div><label class="block text-sm font-medium text-gray-700 mb-1">系统SKU</label><div class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm bg-gray-50 text-gray-600">C003</div></div><div><label class="block text-sm font-medium text-gray-700 mb-1">商品标题</label><textarea rows="2" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 resize-y bg-gray-50 text-gray-600" readonly>Camping Tent Waterproof 4 Person Easy Setup</textarea></div><div><label class="block text-sm font-medium text-gray-700 mb-1">中文核心卖点</label><textarea rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 resize-y bg-gray-50 text-gray-600" readonly>防雨, 轻便, 易搭建, 四人空间, 包含防潮垫</textarea></div><div><label class="block text-sm font-medium text-gray-700 mb-1">参考图</label><div class="grid grid-cols-5 gap-2"><img src="https://placehold.co/80x80/eef2ff/334155?text=R1" class="rounded border border-gray-200"><img src="https://placehold.co/80x80/eef2ff/334155?text=R2" class="rounded border border-gray-200"></div></div><div class="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-4"><div class="flex justify-between items-center"><label class="text-sm font-medium text-slate-700">模型供应商</label><select class="text-sm border-gray-300 rounded px-2 py-1 w-48 bg-white" disabled><option selected>LinkFox</option></select></div><div class="grid grid-cols-1 gap-3"><div class="flex items-center justify-between"><label class="text-sm text-gray-600">场景图 (缩写: 场)</label><div class="flex items-center"><input type="number" value="6" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center mx-2" readonly><span class="text-xs text-gray-400">张</span></div></div><div class="flex items-center justify-between"><label class="text-sm text-gray-600">特写图-白底 (缩写: 白特)</label><div class="flex items-center"><input type="number" value="6" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center mx-2" readonly><span class="text-xs text-gray-400">张</span></div></div><div class="flex items-center justify-between"><label class="text-sm text-gray-600">特写图-非白底 (缩写: 特)</label><div class="flex items-center"><input type="number" value="4" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center mx-2" readonly><span class="text-xs text-gray-400">张</span></div></div><div class="flex items-center justify-between"><label class="text-sm text-gray-600">卖点图 (缩写: 卖)</label><div class="flex items-center"><input type="number" value="2" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center mx-2" readonly><span class="text-xs text-gray-400">张</span></div></div></div><div class="border-t border-gray-200 pt-3 flex justify-between text-xs text-gray-500"><span><i class="fa-solid fa-circle-info mr-1"></i>预计总张数: 18 张</span><span class="text-blue-600 font-medium">LinkFox</span></div></div></div><div class="p-4 border-t border-gray-200 flex justify-end bg-gray-50"><button class="px-4 py-2 border border-gray-300 bg-white rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50" onclick="closeAll()">关闭</button></div></div>
+    <div id="drawer-view" class="drawer fixed inset-y-0 right-0 z-[70] w-[480px] bg-white shadow-2xl flex flex-col"><div class="h-14 flex items-center justify-between px-6 border-b border-gray-200 bg-slate-50"><div><h3 class="text-lg font-bold text-slate-800">查看任务</h3><span class="text-xs text-gray-500 font-mono">ID: T20260112-0003</span></div><button onclick="closeAll()" class="text-gray-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button></div><div class="flex-1 p-6 space-y-6 overflow-y-auto"><div><label class="block text-sm font-medium text-gray-700 mb-1">系统SKU</label><div class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm bg-gray-50 text-gray-600">C003</div></div><div><label class="block text-sm font-medium text-gray-700 mb-1">商品中文标题</label><textarea rows="2" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 resize-y bg-gray-50 text-gray-600" readonly>露营帐篷防水可容纳4人易于搭建</textarea></div><div><label class="block text-sm font-medium text-gray-700 mb-1">中文核心卖点</label><textarea rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 resize-y bg-gray-50 text-gray-600" readonly>防雨, 轻便, 易搭建, 四人空间, 包含防潮垫</textarea></div><div><label class="block text-sm font-medium text-gray-700 mb-1">参考图</label><div class="grid grid-cols-5 gap-2"><img src="https://placehold.co/80x80/eef2ff/334155?text=R1" class="rounded border border-gray-200"><img src="https://placehold.co/80x80/eef2ff/334155?text=R2" class="rounded border border-gray-200"></div></div><div class="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-4"><div class="flex justify-between items-center"><label class="text-sm font-medium text-slate-700">模型供应商</label><select class="text-sm border-gray-300 rounded px-2 py-1 w-48 bg-white" disabled><option selected>LinkFox</option></select></div><div class="grid grid-cols-1 gap-3"><div class="flex items-center justify-between"><label class="text-sm text-gray-600">场景图 (缩写: 场)</label><div class="flex items-center"><input type="number" value="6" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center mx-2" readonly><span class="text-xs text-gray-400">张</span></div></div><div class="flex items-center justify-between"><label class="text-sm text-gray-600">特写图-白底 (缩写: 白特)</label><div class="flex items-center"><input type="number" value="6" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center mx-2" readonly><span class="text-xs text-gray-400">张</span></div></div><div class="flex items-center justify-between"><label class="text-sm text-gray-600">特写图-非白底 (缩写: 特)</label><div class="flex items-center"><input type="number" value="4" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center mx-2" readonly><span class="text-xs text-gray-400">张</span></div></div><div class="flex items-center justify-between"><label class="text-sm text-gray-600">卖点图 (缩写: 卖)</label><div class="flex items-center"><input type="number" value="2" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center mx-2" readonly><span class="text-xs text-gray-400">张</span></div></div></div><div class="border-t border-gray-200 pt-3 flex justify-between text-xs text-gray-500"><span><i class="fa-solid fa-circle-info mr-1"></i>预计总张数: 18 张</span><span class="text-blue-600 font-medium">LinkFox</span></div></div></div><div class="p-4 border-t border-gray-200 flex justify-end bg-gray-50"><button class="px-4 py-2 border border-gray-300 bg-white rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50" onclick="closeAll()">关闭</button></div></div>
 
     <!-- Modal B Import -->
     <div id="modal-import" class="modal fixed inset-0 z-[80] flex items-center justify-center p-4"><div class="bg-white rounded-lg shadow-xl w-full max-w-lg overflow-hidden transform transition-all"><div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center"><h3 class="text-lg font-bold text-gray-900">批量导入系统 SKU</h3><button onclick="closeAll()" class="text-gray-400 hover:text-gray-500"><i class="fa-solid fa-xmark"></i></button></div><div class="p-6"><label class="block text-sm font-medium text-gray-700 mb-2">输入系统 SKU (一行一个, 最多50行)</label><textarea rows="6" placeholder="A001&#10;A002&#10;..." class="w-full border border-gray-300 rounded-md p-3 text-sm focus:ring-blue-500 focus:border-blue-500 font-mono"></textarea><p class="text-xs text-gray-500 mt-2 text-right mb-4">已输入: 0 行</p><div class="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-4"><div class="flex justify-between items-center"><label class="text-sm font-medium text-slate-700">默认生图配置</label><select class="text-sm border-gray-300 rounded px-2 py-1 w-32 bg-white" disabled><option selected>LinkFox</option></select></div><div class="grid grid-cols-2 gap-3"><div class="flex items-center justify-between"><label class="text-sm text-gray-600">场景 (场)</label><input type="number" value="6" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center"></div><div class="flex items-center justify-between"><label class="text-sm text-gray-600">白特 (白特)</label><input type="number" value="2" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center"></div><div class="flex items-center justify-between"><label class="text-sm text-gray-600">特写 (特)</label><input type="number" value="2" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center"></div><div class="flex items-center justify-between"><label class="text-sm text-gray-600">卖点 (卖)</label><input type="number" value="4" class="w-16 border border-gray-300 rounded px-2 py-1 text-sm text-center"></div></div></div><div class="mt-4 flex items-start text-xs text-amber-600 bg-amber-50 p-2 rounded border border-amber-100"><i class="fa-solid fa-lightbulb mr-2 mt-0.5"></i><span>提示: 导入后任务状态为"待完善"，请在列表补充参考图后提交。</span></div></div><div class="bg-gray-50 px-6 py-3 flex justify-end space-x-3"><button class="px-4 py-2 border border-gray-300 bg-white rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50" onclick="closeAll()">取消</button><button class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700" onclick="closeAll()">确认导入</button></div></div></div>
@@ -930,6 +1393,7 @@
             document.getElementById('tab-content-2').classList.add('hidden-tab');
             document.getElementById('tab-content-3').classList.add('hidden-tab');
             document.getElementById('tab-content-4').classList.add('hidden-tab');
+            document.getElementById('tab-content-5').classList.add('hidden-tab');
             
             const content = document.getElementById('tab-content-' + id);
             if(content) content.classList.remove('hidden-tab');
@@ -945,15 +1409,17 @@
         function openModal(id) { document.getElementById('overlay').classList.add('open'); document.getElementById(id).classList.add('open'); }
         
         // Modified openReviewWorkbench to support 'readonly' mode with MOCK DATA
-        function openReviewWorkbench(mode = 'edit') {
+        // Added titleContext param for Tab 5 requirement
+        function openReviewWorkbench(mode = 'edit', titleContext = '待推送任务进度') {
             const wb = document.getElementById('review-workbench');
+            const progressText = document.getElementById('l2-task-progress-text');
             
             // Handle Read-only classes and MOCK DATA
             if (mode === 'readonly') {
                 wb.classList.add('mode-readonly');
                 // Mock Data for Tab 4 visualization
                 document.getElementById('l2-status-text').textContent = "当前任务审核图片进度:";
-                document.getElementById('l2-task-progress-text').textContent = "待推送任务进度";
+                if(progressText) progressText.textContent = titleContext;
                 
                 // Set counts to simulate an audited task
                 document.getElementById('count-approved').textContent = `✅ 10`;
@@ -967,7 +1433,7 @@
                 wb.classList.remove('mode-readonly');
                 // Reset to Tab 3 default
                 document.getElementById('l2-status-text').textContent = "当前任务审核图片进度:";
-                document.getElementById('l2-task-progress-text').textContent = "待审核任务进度";
+                if(progressText) progressText.textContent = "待审核任务进度";
                 updateL2Stats(); // Reset counts based on actual DOM classes
                 
                 mockReadonlyData(false); // Reset cards
@@ -1442,10 +1908,79 @@
             }, 200);
         }
 
+        // New Tab 5 specific functions
+        function copyToNewTask(sku) {
+            // Modified to not jump, just toast as requested
+            showToast(`已成功在“建任务”列表复制创建新任务 (${sku})`);
+        }
+
+        // --- NEW Toggle Logic with Counter Update ---
+        let needsConfirmCount = 3; // Initial mock count matching the HTML
+
+        function toggleConfirm(wrapper) {
+            const bg = wrapper.querySelector('.confirm-toggle-bg');
+            const text = wrapper.querySelector('.toggle-text');
+            const countEl = document.getElementById('tab5-confirm-count');
+            
+            // Toggle Logic
+            if (wrapper.classList.contains('red-mode')) {
+                // Switching from Needs Confirm (Red) -> Confirmed (Green)
+                wrapper.classList.remove('red-mode');
+                wrapper.classList.add('green-mode');
+                
+                bg.classList.remove('is-red');
+                bg.classList.add('is-green');
+                
+                text.textContent = '已确认';
+                
+                showToast('异常已确认');
+                
+                // Update Counter (Decrease)
+                if (needsConfirmCount > 0) needsConfirmCount--;
+                
+            } else {
+                // Switching from Confirmed (Green) -> Needs Confirm (Red)
+                wrapper.classList.remove('green-mode');
+                wrapper.classList.add('red-mode');
+                
+                bg.classList.remove('is-green');
+                bg.classList.add('is-red');
+                
+                text.textContent = '需确认';
+                
+                showToast('标记为需确认');
+                
+                // Update Counter (Increase)
+                needsConfirmCount++;
+            }
+            
+            // Render Count
+            if (countEl) countEl.textContent = `需确认: ${needsConfirmCount}`;
+        }
+        
+        let rerunTarget = '';
+        function openRerunModal(target) {
+            rerunTarget = target;
+            document.getElementById('modal-rerun-confirm').classList.add('open');
+            document.getElementById('overlay').classList.add('open');
+        }
+        
+        function closeRerunModal() {
+             document.getElementById('modal-rerun-confirm').classList.remove('open');
+             document.getElementById('overlay').classList.remove('open');
+        }
+
+        function confirmRerun() {
+            document.getElementById('modal-rerun-confirm').classList.remove('open');
+            document.getElementById('overlay').classList.remove('open');
+            showToast('已复制并在Tab1新建任务');
+        }
+
         // Global Keyboard Shortcuts
         document.addEventListener('keydown', function(e) {
             const l3Modal = document.getElementById('detail-modal');
             const pushModal = document.getElementById('modal-push-confirm');
+            const rerunModal = document.getElementById('modal-rerun-confirm');
             const l2Workbench = document.getElementById('review-workbench');
             const tab3 = document.getElementById('tab-content-3');
             
@@ -1460,6 +1995,18 @@
                 } else if (e.key === 'Escape') {
                     e.preventDefault();
                     resolveNewPush(false);
+                }
+                return;
+            }
+            
+            // 1.5 Rerun Modal Priority
+            if (rerunModal && rerunModal.classList.contains('open')) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    confirmRerun();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    closeRerunModal();
                 }
                 return;
             }
