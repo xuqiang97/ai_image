@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI生图系统-V3.2(tab123已完成)</title>
+    <title>AI生图-V4.0(tab1234已完成)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -78,6 +78,13 @@
         .show-hints .hint-target::after { content: attr(data-hint); position: absolute; top: -24px; left: 50%; transform: translateX(-50%); background-color: #ef4444; color: white; font-family: monospace; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.2); pointer-events: none; z-index: 2100; opacity: 0.95; }
         .show-hints .hint-target.hint-bottom::after { top: auto; bottom: -28px; }
         .show-hints td .hint-target { outline-offset: 2px; }
+
+        /* ================= Read Only Mode (Tab 4/5 Reuse) ================= */
+        .mode-readonly .audit-card-actions { display: none !important; }
+        .mode-readonly #l2-bottom-bar { display: none !important; }
+        .mode-readonly #l2-nav-task-switcher { display: flex !important; }
+        .mode-readonly #l3-footer-actions { display: none !important; }
+        .mode-readonly .l3-carousel-item { cursor: default; }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
@@ -126,7 +133,7 @@
                     <button onclick="switchTab(1)" id="tab-btn-1" class="tab-btn py-3 text-sm font-bold border-b-2 border-blue-600 text-blue-600"><i class="fa-regular fa-pen-to-square mr-1.5"></i>建任务 (5)</button>
                     <button onclick="switchTab(2)" id="tab-btn-2" class="tab-btn py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors"><i class="fa-solid fa-circle-notch fa-spin mr-1.5 text-xs" id="tab-icon-2"></i>生图中 (3)</button>
                     <button onclick="switchTab(3)" id="tab-btn-3" class="tab-btn py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors"><i class="fa-solid fa-clipboard-check mr-1.5"></i>待审核 (8)</button>
-                    <button class="tab-btn py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors">待推送 (0)</button>
+                    <button onclick="switchTab(4)" id="tab-btn-4" class="tab-btn py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors"><i class="fa-solid fa-paper-plane mr-1.5"></i>待推送 (2)</button>
                     <button class="tab-btn py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors">已完成</button>
                 </nav>
             </div>
@@ -143,11 +150,11 @@
             <div id="tab-content-2" class="flex flex-col flex-1 min-h-0 hidden-tab">
                 <div class="bg-slate-50 border-b border-gray-200 p-5 shrink-0"><div class="flex justify-between items-start"><div class="flex items-center space-x-8"><div class="flex items-center space-x-3 text-sm"><span class="text-slate-500 font-bold text-xs uppercase tracking-wider mr-1">任务状态:</span><div class="segmented-control"><div class="segment-item active" onclick="selectSegment(this)">全部</div><div class="segment-item" onclick="selectSegment(this)">排队中</div><div class="segment-item" onclick="selectSegment(this)">生成中</div></div></div><div class="flex items-center space-x-2"><span class="text-slate-500 font-bold text-xs uppercase tracking-wider mr-1">搜索:</span><div class="flex shadow-sm rounded-md"><div class="relative flex-grow focus-within:z-10"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fa-solid fa-magnifying-glass text-gray-400 text-xs"></i></div><input type="text" class="focus:ring-blue-500 focus:border-blue-500 block w-72 rounded-none rounded-l-md pl-9 sm:text-sm border-gray-300 py-1.5 text-xs" placeholder="输入系统SKU / TaskID / BatchID"></div><button class="relative -ml-px inline-flex items-center px-4 py-1.5 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:z-10">查询</button><button class="relative -ml-px inline-flex items-center px-3 py-1.5 border border-gray-300 bg-gray-50 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded-r-md focus:z-10">重置</button></div></div></div><div class="flex items-center space-x-2"><span class="text-slate-500 font-bold text-xs uppercase tracking-wider">排序:</span><select class="block w-40 pl-3 pr-8 py-1.5 text-sm border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md shadow-sm bg-white cursor-pointer hover:bg-gray-50"><option>更新时间倒排</option><option>更新时间正排</option><option>创建时间倒排</option><option>创建时间正排</option></select></div></div></div>
                 <div class="bg-white px-5 py-3 border-b border-gray-100 flex items-center shrink-0 shadow-[0_2px_4px_rgba(0,0,0,0.02)] z-10 space-x-3"><button class="btn-primary hint-target" data-hint="刷新进度" onclick="showToast('刷新成功')"><i class="fa-solid fa-arrows-rotate mr-1.5"></i>刷新生成进度</button></div>
-                <div class="flex-1 overflow-auto bg-gray-50 px-5 pt-4 pb-10"><table class="min-w-full divide-y divide-gray-200 border border-gray-200 shadow-sm rounded-lg overflow-hidden bg-white"><thead class="bg-slate-50 text-slate-500 text-xs uppercase font-semibold tracking-wide"><tr><th class="px-5 py-3 text-left w-10"><input type="checkbox" disabled class="rounded text-gray-300 cursor-not-allowed"></th><th class="px-5 py-3 text-left w-64">基本信息</th><th class="px-5 py-3 text-left w-32 whitespace-nowrap">任务状态</th><th class="px-5 py-3 text-left w-80">生成进度</th><th class="px-5 py-3 text-left w-64">商品文本信息</th><th class="px-5 py-3 text-left w-48">商品图片信息</th><th class="px-5 py-3 text-left w-48">配置信息</th><th class="px-5 py-3 text-left w-24">操作</th></tr></thead><tbody class="divide-y divide-gray-100 text-sm"><tr class="group hover:bg-purple-50/10 transition-colors"><td class="px-5 py-4 align-top"><input type="checkbox" disabled class="rounded text-gray-300 cursor-not-allowed"></td><td class="px-5 py-4 align-top"><div class="font-bold text-slate-800 text-base">系统SKU: C003</div><div class="text-xs text-gray-500 font-mono mt-1">TaskID: T20260112-0003</div><div class="text-xs text-gray-400 font-mono">BatchID: B20260112-0001</div><div class="text-xs text-gray-400 mt-1">创建: 2026-01-12 10:00</div><div class="text-xs text-gray-400">更新: 2026-01-12 10:35</div></td><td class="px-5 py-4 align-top"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-100 whitespace-nowrap"><i class="fa-solid fa-circle-notch fa-spin mr-1.5 text-[10px]"></i>生成中</span></td><td class="px-5 py-4 align-top"><div class="w-full bg-gray-200 rounded-full h-2.5 mb-2 overflow-hidden"><div class="bg-purple-500 h-2.5 rounded-full relative" style="width: 60%"><div class="absolute inset-0 bg-white/20 animate-[pulse_2s_infinite]"></div></div></div><div class="text-[10px] text-gray-400 mt-1 mb-1"><i class="fa-regular fa-clock mr-1"></i>已耗时: 35m 12s</div><div class="text-[11px] font-mono text-gray-500 flex items-center space-x-1.5"><span>计划:20</span><span class="text-gray-300">|</span><span class="text-green-600 font-bold">成功:8</span><span class="text-gray-300">|</span><span class="text-purple-600 font-bold">生成中:5</span><span class="text-gray-300">|</span><span class="text-red-500 font-bold">失败:7</span></div></td><td class="px-5 py-4 align-top cell-relative"><div class="truncate w-60 font-medium text-gray-700 truncate-hover cursor-help">标题: Camping Tent Waterproof...</div><div class="truncate w-60 text-xs text-gray-500 mt-1.5 truncate-hover cursor-help">卖点: 防雨, 轻便...</div></td><td class="px-5 py-4 align-top"><div class="flex items-center -space-x-2 py-1 grayscale opacity-80 cursor-not-allowed"><img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white"><img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white"><div class="w-9 h-9 rounded-lg bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-gray-500">+2</div></div></td><td class="px-5 py-4 align-top text-xs text-gray-500"><div class="text-blue-600 font-bold mb-1">LinkFox</div><div>预: 20 张</div><div class="text-[10px] text-gray-400 mt-0.5 border-gray-300 inline-block">场:6 白特:6 特:4 卖:2</div></td><td class="px-5 py-4 align-top"><button class="text-blue-600 hover:text-blue-800 font-medium text-xs hint-target" data-hint="查看抽屉" onclick="openDrawer('drawer-view')">查看</button></td></tr><tr class="group hover:bg-blue-50/10 transition-colors"><td class="px-5 py-4 align-top"><input type="checkbox" disabled class="rounded text-gray-300 cursor-not-allowed"></td><td class="px-5 py-4 align-top"><div class="font-bold text-slate-800 text-base">系统SKU: D004</div><div class="text-xs text-gray-500 font-mono mt-1">TaskID: T20260112-0004</div><div class="text-xs text-gray-400 font-mono">BatchID: B20260112-0001</div><div class="text-xs text-gray-400 mt-1">创建: 2026-01-12 10:40</div><div class="text-xs text-gray-400">更新: 2026-01-12 10:40</div></td><td class="px-5 py-4 align-top"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100 whitespace-nowrap"><i class="fa-regular fa-clock mr-1.5"></i>排队中</span></td><td class="px-5 py-4 align-top"><div class="w-full bg-gray-200 rounded-full h-2.5 mb-2"><div class="bg-blue-400 h-2.5 rounded-full" style="width: 0%"></div></div><div class="text-[10px] text-gray-400 mt-1 mb-1"><i class="fa-regular fa-clock mr-1"></i>已耗时: 00m 05s</div><div class="text-[11px] font-mono text-gray-500 flex items-center space-x-1.5"><span>计划:14</span><span class="text-gray-300">|</span><span>成功:0</span><span class="text-gray-300">|</span><span>生成中:0</span><span class="text-gray-300">|</span><span>失败:0</span></div></td><td class="px-5 py-4 align-top cell-relative"><div class="truncate w-60 font-medium text-gray-700 truncate-hover cursor-help">标题: Ceramic Coffee Mug...</div><div class="truncate w-60 text-xs text-gray-500 mt-1.5 truncate-hover cursor-help">卖点: 陶瓷, 耐热...</div></td><td class="px-5 py-4 align-top"><div class="flex items-center -space-x-2 py-1 grayscale opacity-80 cursor-not-allowed"><img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white"><img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white"><div class="w-9 h-9 rounded-lg bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-gray-500">+2</div></div></td><td class="px-5 py-4 align-top text-xs text-gray-500"><div class="text-blue-600 font-bold mb-1">LinkFox</div><div>预: 14 张</div><div class="text-[10px] text-gray-400 mt-0.5 border-gray-300 inline-block">场:6 白特:4 特:2 卖:2</div></td><td class="px-5 py-4 align-top"><button class="text-blue-600 hover:text-blue-800 font-medium text-xs hint-target" data-hint="查看抽屉" onclick="openDrawer('drawer-view')">查看</button></td></tr></tbody></table></div>
+                <div class="flex-1 overflow-auto bg-gray-50 px-5 pt-4 pb-10"><table class="min-w-full divide-y divide-gray-200 border border-gray-200 shadow-sm rounded-lg overflow-hidden bg-white"><thead class="bg-slate-50 text-slate-500 text-xs uppercase font-semibold tracking-wide"><tr><th class="px-5 py-3 text-left w-10"><input type="checkbox" disabled class="rounded text-gray-300 cursor-not-allowed"></th><th class="px-5 py-3 text-left w-64">基本信息</th><th class="px-5 py-3 text-left w-32 whitespace-nowrap">任务状态</th><th class="px-5 py-3 text-left w-80">生成进度</th><th class="px-5 py-3 text-left w-64">商品文本信息</th><th class="px-5 py-3 text-left w-48">商品图片信息</th><th class="px-5 py-3 text-left w-48">配置信息</th><th class="px-5 py-3 text-left w-24">操作</th></tr></thead><tbody class="divide-y divide-gray-100 text-sm"><tr class="group hover:bg-purple-50/10 transition-colors"><td class="px-5 py-4 align-top"><input type="checkbox" disabled class="rounded text-gray-300 cursor-not-allowed"></td><td class="px-5 py-4 align-top"><div class="font-bold text-slate-800 text-base">系统SKU: C003</div><div class="text-xs text-gray-500 font-mono mt-1">TaskID: T20260112-0003</div><div class="text-xs text-gray-400 font-mono">BatchID: B20260112-0001</div><div class="text-xs text-gray-400 mt-1">创建: 2026-01-12 10:00</div><div class="text-xs text-gray-400">更新: 2026-01-12 10:35</div></td><td class="px-5 py-4 align-top"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-100 whitespace-nowrap"><i class="fa-solid fa-circle-notch fa-spin mr-1.5 text-[10px]"></i>生成中</span></td><td class="px-5 py-4 align-top"><div class="w-full bg-gray-200 rounded-full h-2.5 mb-2 overflow-hidden"><div class="bg-purple-500 h-2.5 rounded-full relative" style="width: 60%"><div class="absolute inset-0 bg-white/20 animate-[pulse_2s_infinite]"></div></div></div><div class="text-[10px] text-gray-400 mt-1 mb-1"><i class="fa-regular fa-clock mr-1"></i>已耗时: 35m 12s</div><div class="text-[11px] font-mono text-gray-500 flex items-center space-x-1.5"><span>计划:20</span><span class="text-gray-300">|</span><span class="text-green-600 font-bold">成功:8</span><span class="text-gray-300">|</span><span class="text-purple-600 font-bold">生成中:5</span><span class="text-gray-300">|</span><span class="text-red-500 font-bold">失败:7</span></div></td><td class="px-5 py-4 align-top cell-relative"><div class="truncate w-60 font-medium text-gray-700 truncate-hover cursor-help">标题: Camping Tent Waterproof...</div><div class="truncate w-60 text-xs text-gray-500 mt-1.5 truncate-hover cursor-help">卖点: 防雨, 轻便...</div></td><td class="px-5 py-4 align-top"><div class="flex items-center -space-x-2 py-1 grayscale opacity-80 cursor-not-allowed"><img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white"><img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white"><div class="w-9 h-9 rounded-lg bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-gray-500">+2</div></div></td><td class="px-5 py-4 align-top text-xs text-gray-500"><div class="text-blue-600 font-bold mb-1">LinkFox</div><div>预: 20 张</div><div class="text-[10px] text-gray-400 mt-0.5 border-gray-300 inline-block">场:6 白特:6 特:4 卖:2</div></td><td class="px-5 py-4 align-top"><button class="text-blue-600 hover:text-blue-800 font-medium text-xs hint-target" data-hint="查看抽屉" onclick="openDrawer('drawer-view')">查看任务</button></td></tr><tr class="group hover:bg-blue-50/10 transition-colors"><td class="px-5 py-4 align-top"><input type="checkbox" disabled class="rounded text-gray-300 cursor-not-allowed"></td><td class="px-5 py-4 align-top"><div class="font-bold text-slate-800 text-base">系统SKU: D004</div><div class="text-xs text-gray-500 font-mono mt-1">TaskID: T20260112-0004</div><div class="text-xs text-gray-400 font-mono">BatchID: B20260112-0001</div><div class="text-xs text-gray-400 mt-1">创建: 2026-01-12 10:40</div><div class="text-xs text-gray-400">更新: 2026-01-12 10:40</div></td><td class="px-5 py-4 align-top"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100 whitespace-nowrap"><i class="fa-regular fa-clock mr-1.5"></i>排队中</span></td><td class="px-5 py-4 align-top"><div class="w-full bg-gray-200 rounded-full h-2.5 mb-2"><div class="bg-blue-400 h-2.5 rounded-full" style="width: 0%"></div></div><div class="text-[10px] text-gray-400 mt-1 mb-1"><i class="fa-regular fa-clock mr-1"></i>已耗时: 00m 05s</div><div class="text-[11px] font-mono text-gray-500 flex items-center space-x-1.5"><span>计划:14</span><span class="text-gray-300">|</span><span>成功:0</span><span class="text-gray-300">|</span><span>生成中:0</span><span class="text-gray-300">|</span><span>失败:0</span></div></td><td class="px-5 py-4 align-top cell-relative"><div class="truncate w-60 font-medium text-gray-700 truncate-hover cursor-help">标题: Ceramic Coffee Mug...</div><div class="truncate w-60 text-xs text-gray-500 mt-1.5 truncate-hover cursor-help">卖点: 陶瓷, 耐热...</div></td><td class="px-5 py-4 align-top"><div class="flex items-center -space-x-2 py-1 grayscale opacity-80 cursor-not-allowed"><img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white"><img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white"><div class="w-9 h-9 rounded-lg bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-gray-500">+2</div></div></td><td class="px-5 py-4 align-top text-xs text-gray-500"><div class="text-blue-600 font-bold mb-1">LinkFox</div><div>预: 14 张</div><div class="text-[10px] text-gray-400 mt-0.5 border-gray-300 inline-block">场:6 白特:4 特:2 卖:2</div></td><td class="px-5 py-4 align-top"><button class="text-blue-600 hover:text-blue-800 font-medium text-xs hint-target" data-hint="查看抽屉" onclick="openDrawer('drawer-view')">查看任务</button></td></tr></tbody></table></div>
                 <div class="px-6 py-4 border-t border-gray-200 bg-white shrink-0 flex items-center justify-between text-sm text-gray-500 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)]"><div>共 <span class="font-bold text-gray-700">3</span> 条</div><div class="flex items-center space-x-4"><select class="border-gray-300 rounded text-sm py-1 focus:ring-blue-500"><option>20条/页</option><option>50条/页</option></select><nav class="isolate inline-flex -space-x-px rounded-md shadow-sm"><a href="#" class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"><i class="fa-solid fa-chevron-left text-xs"></i></a><a href="#" class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-blue-600">1</a><span class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300">...</span><a href="#" class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"><i class="fa-solid fa-chevron-right text-xs"></i></a></nav><div class="flex items-center space-x-2"><span>前往</span><input type="text" class="w-12 text-center border border-gray-300 rounded py-1 focus:ring-blue-500 outline-none"><span>页</span></div></div></div>
             </div>
 
-            <!-- ================= TAB 3: 待审核 (修改版) ================= -->
+            <!-- ================= TAB 3: 待审核 (保持不变) ================= -->
             <div id="tab-content-3" class="flex flex-col flex-1 min-h-0 hidden-tab">
                 <div class="bg-slate-50 border-b border-gray-200 p-5 shrink-0">
                     <div class="flex justify-between items-center">
@@ -167,7 +174,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="flex items-center space-x-2 flex-shrink-0 ml-4"><span class="text-slate-500 font-bold text-xs uppercase tracking-wider">排序:</span><select class="block w-44 pl-3 pr-8 py-1.5 text-sm border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md shadow-sm bg-white cursor-pointer hover:bg-gray-50"><option selected>更新时间正排</option><option>更新时间倒排</option><option>创建时间倒排</option><option>创建时间正排</option></select></div>
+                        <div class="flex items-center space-x-2 flex-shrink-0 ml-4"><span class="text-slate-500 font-bold text-xs uppercase tracking-wider">排序:</span><select class="block w-44 pl-3 pr-8 py-1.5 text-sm border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md shadow-sm bg-white cursor-pointer hover:bg-gray-50"><option selected>更新时间正排</option><option>更新时间倒排</option><option>创建时间正排</option><option>创建时间倒排</option></select></div>
                     </div>
                 </div>
                 
@@ -205,7 +212,7 @@
                                 <td class="px-5 py-4 align-top"><div class="flex items-center -space-x-2 py-1 grayscale opacity-80 cursor-not-allowed"><img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white"><img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white"><div class="w-9 h-9 rounded-lg bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-gray-500">+2</div></div></td>
                                 <td class="px-5 py-4 align-top text-xs text-gray-500"><div class="text-blue-600 font-bold mb-1">LinkFox</div><div>预: 16 张</div><div class="text-[10px] text-gray-400 mt-0.5 border-gray-300 inline-block">场:8 白特:2 特:2 卖:4</div></td>
                                 <td class="px-5 py-4 align-top space-y-2">
-                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs hint-target block" data-hint="查看抽屉" onclick="openDrawer('drawer-view')">查看</button>
+                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs hint-target block" data-hint="查看抽屉" onclick="openDrawer('drawer-view')">查看任务</button>
                                 </td>
                             </tr>
                             <tr class="group hover:bg-yellow-50/10 transition-colors bg-green-50/5">
@@ -221,7 +228,7 @@
                                 <td class="px-5 py-4 align-top"><div class="flex items-center -space-x-2 py-1 grayscale opacity-80 cursor-not-allowed"><img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white"><img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white"><div class="w-9 h-9 rounded-lg bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-gray-500">+3</div></div></td>
                                 <td class="px-5 py-4 align-top text-xs text-gray-500"><div class="text-blue-600 font-bold mb-1">LinkFox</div><div>预: 18 张</div><div class="text-[10px] text-gray-400 mt-0.5 border-gray-300 inline-block">场:6 白特:6 特:4 卖:2</div></td>
                                 <td class="px-5 py-4 align-top space-y-2">
-                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs hint-target block" data-hint="查看抽屉" onclick="openDrawer('drawer-view')">查看</button>
+                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs hint-target block" data-hint="查看抽屉" onclick="openDrawer('drawer-view')">查看任务</button>
                                 </td>
                             </tr>
                         </tbody>
@@ -231,16 +238,160 @@
                 <div class="px-6 py-4 border-t border-gray-200 bg-white shrink-0 flex items-center justify-between text-sm text-gray-500 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)]"><div>共 <span class="font-bold text-gray-700">8</span> 条</div><div class="flex items-center space-x-4"><select class="border-gray-300 rounded text-sm py-1 focus:ring-blue-500"><option>20条/页</option><option>50条/页</option></select><nav class="isolate inline-flex -space-x-px rounded-md shadow-sm"><a href="#" class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"><i class="fa-solid fa-chevron-left text-xs"></i></a><a href="#" class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-blue-600">1</a><span class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300">...</span><a href="#" class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"><i class="fa-solid fa-chevron-right text-xs"></i></a></nav><div class="flex items-center space-x-2"><span>前往</span><input type="text" class="w-12 text-center border border-gray-300 rounded py-1 focus:ring-blue-500 outline-none"><span>页</span></div></div></div>
             </div>
 
+            <!-- ================= TAB 4: 待推送 (列表修改版) ================= -->
+            <div id="tab-content-4" class="flex flex-col flex-1 min-h-0 hidden-tab">
+                <!-- 1. 搜索区 -->
+                <div class="bg-slate-50 border-b border-gray-200 p-5 shrink-0">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-6 flex-1 min-w-0">
+                            <!-- 任务状态筛选 -->
+                            <div class="flex items-center space-x-2 text-sm flex-shrink-0">
+                                <span class="text-slate-500 font-bold text-xs uppercase tracking-wider">任务状态:</span>
+                                <div class="segmented-control"><div class="segment-item active" onclick="selectSegment(this)">全部</div><div class="segment-item" onclick="selectSegment(this)">推送中</div><div class="segment-item" onclick="selectSegment(this)">推送失败</div></div>
+                            </div>
+                            <!-- 复用Tab3 搜索 -->
+                            <div class="flex items-center space-x-2 flex-1 max-w-lg ml-2">
+                                <span class="text-slate-500 font-bold text-xs uppercase tracking-wider flex-shrink-0">搜索:</span>
+                                <div class="flex shadow-sm rounded-md w-full">
+                                    <div class="relative flex-grow focus-within:z-10"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fa-solid fa-magnifying-glass text-gray-400 text-xs"></i></div><input type="text" class="focus:ring-blue-500 focus:border-blue-500 block w-full rounded-none rounded-l-md pl-9 sm:text-sm border-gray-300 py-1.5 text-xs" placeholder="输入系统SKU / TaskID / BatchID"></div>
+                                    <button class="relative -ml-px inline-flex items-center px-4 py-1.5 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:z-10">查询</button>
+                                    <button class="relative -ml-px inline-flex items-center px-3 py-1.5 border border-gray-300 bg-gray-50 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded-r-md focus:z-10">重置</button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 复用Tab3 排序 (默认改为倒排) -->
+                        <div class="flex items-center space-x-2 flex-shrink-0 ml-4"><span class="text-slate-500 font-bold text-xs uppercase tracking-wider">排序:</span><select class="block w-44 pl-3 pr-8 py-1.5 text-sm border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md shadow-sm bg-white cursor-pointer hover:bg-gray-50"><option selected>更新时间倒排</option><option>更新时间正排</option><option>创建时间倒排</option><option>创建时间正排</option></select></div>
+                    </div>
+                </div>
+
+                <!-- 2. 功能按钮区 -->
+                <div class="bg-white px-5 py-3 border-b border-gray-100 flex items-center shrink-0 shadow-[0_2px_4px_rgba(0,0,0,0.02)] z-10 space-x-3">
+                    <button class="btn-primary hint-target" data-hint="失败任务重试" onclick="showToast('已提交重试队列')"><i class="fa-solid fa-arrow-rotate-right mr-1.5"></i>批量重试推送</button>
+                    <button class="btn-default hint-target" data-hint="刷新进度" onclick="showToast('推送进度已刷新')"><i class="fa-solid fa-arrows-rotate mr-1.5"></i>刷新推送进度</button>
+                </div>
+
+                <!-- 3. 列表区 -->
+                <div class="flex-1 overflow-auto bg-gray-50 px-5 pt-4 pb-10">
+                    <table class="min-w-full divide-y divide-gray-200 border border-gray-200 shadow-sm rounded-lg overflow-hidden bg-white">
+                        <thead class="bg-slate-50 text-slate-500 text-xs uppercase font-semibold tracking-wide">
+                            <tr>
+                                <th class="px-5 py-3 text-left w-10"><input type="checkbox" class="rounded text-blue-600 focus:ring-0 cursor-pointer"></th>
+                                <!-- 基本信息复用 Tab1/2/3 -->
+                                <th class="px-5 py-3 text-left w-64">基本信息</th>
+                                <th class="px-5 py-3 text-left w-40">任务状态</th>
+                                <!-- 生图全链路概览 (去英文) -->
+                                <th class="px-5 py-3 text-left w-52">生图全链路概览</th>
+                                <!-- 推送图片概览 (移动到去向前, 仅展示) -->
+                                <th class="px-5 py-3 text-left w-40">推送图片概览</th>
+                                <th class="px-5 py-3 text-left w-28">推送去向</th>
+                                <th class="px-5 py-3 text-left w-56">商品文本信息</th>
+                                <th class="px-5 py-3 text-left w-24">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 text-sm">
+                            <!-- Row 1: Pushing -->
+                            <tr class="group hover:bg-blue-50/10 transition-colors">
+                                <td class="px-5 py-4 align-top"><input type="checkbox" class="rounded text-blue-600 cursor-pointer"></td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="font-bold text-slate-800 text-base">系统SKU: G007</div>
+                                    <div class="text-xs text-gray-500 font-mono mt-1">TaskID: T20260112-0007</div>
+                                    <div class="text-xs text-gray-400 font-mono">BatchID: B20260112-0003</div>
+                                    <div class="text-xs text-gray-400 mt-1">创建: 2026-01-12 11:00</div>
+                                    <div class="text-xs text-gray-400">更新: 2026-01-12 13:15</div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100 mb-1">
+                                        <i class="fa-solid fa-circle-notch fa-spin mr-1.5 text-[10px]"></i>推送中
+                                    </div>
+                                    <div class="text-[10px] text-gray-400 ml-1"><i class="fa-regular fa-clock mr-1"></i>已耗时: 3s</div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="flex flex-col space-y-1.5 text-xs text-gray-600 border-l-2 border-gray-200 pl-2">
+                                        <div class="flex justify-between w-40"><span>计划:</span><span class="font-mono">20张</span></div>
+                                        <div class="flex justify-between w-40"><span>生成:</span><span class="font-mono"><span class="text-green-600 font-bold">18</span> / <span class="text-red-500 font-bold">2失败</span></span></div>
+                                        <div class="flex justify-between w-40"><span>审核:</span><span class="font-mono"><span class="text-blue-600 font-bold">10</span> / <span class="text-gray-400 font-bold">8不通过</span></span></div>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="flex items-center -space-x-2 py-1 grayscale opacity-80 cursor-not-allowed">
+                                        <img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white">
+                                        <img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white">
+                                        <div class="w-9 h-9 rounded-lg bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-gray-500">+8</div>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="flex items-center"><i class="fa-solid fa-server text-gray-400 mr-2"></i><span class="text-xs text-gray-700">ERP素材库</span></div>
+                                </td>
+                                <td class="px-5 py-4 align-top cell-relative">
+                                    <div class="truncate w-48 font-medium text-gray-700 truncate-hover cursor-help">标题: Portable Blender USB...</div>
+                                    <div class="truncate w-48 text-xs text-gray-500 mt-1.5 truncate-hover cursor-help">卖点: USB充电, 便携, 6叶刀头...</div>
+                                </td>
+                                <td class="px-5 py-4 align-top space-y-2">
+                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs block" onclick="openDrawer('drawer-view')">查看任务</button>
+                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs block hint-target" data-hint="L2只读模式" onclick="openReviewWorkbench('readonly')">查看生图</button>
+                                </td>
+                            </tr>
+                            
+                            <!-- Row 2: Push Failed -->
+                            <tr class="group hover:bg-red-50/10 transition-colors">
+                                <td class="px-5 py-4 align-top"><input type="checkbox" class="rounded text-blue-600 cursor-pointer"></td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="font-bold text-slate-800 text-base">系统SKU: H008</div>
+                                    <div class="text-xs text-gray-500 font-mono mt-1">TaskID: T20260112-0008</div>
+                                    <div class="text-xs text-gray-400 font-mono">BatchID: B20260112-0003</div>
+                                    <div class="text-xs text-gray-400 mt-1">创建: 2026-01-12 11:20</div>
+                                    <div class="text-xs text-gray-400">更新: 2026-01-12 13:30</div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-100 mb-1">
+                                        <i class="fa-solid fa-triangle-exclamation mr-1.5 text-[10px]"></i>推送失败
+                                    </div>
+                                    <div class="text-[10px] text-red-400 ml-1 font-mono">ERP接口超时 (504)</div>
+                                    <div class="text-[10px] text-gray-400 ml-1 mt-0.5"><i class="fa-regular fa-clock mr-1"></i>耗时: 30s</div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="flex flex-col space-y-1.5 text-xs text-gray-600 border-l-2 border-gray-200 pl-2">
+                                        <div class="flex justify-between w-40"><span>计划:</span><span class="font-mono">10张</span></div>
+                                        <div class="flex justify-between w-40"><span>生成:</span><span class="font-mono"><span class="text-green-600 font-bold">10</span> / <span class="text-gray-300 font-bold">-</span></span></div>
+                                        <div class="flex justify-between w-40"><span>审核:</span><span class="font-mono"><span class="text-blue-600 font-bold">10</span> / <span class="text-gray-300 font-bold">-</span></span></div>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="flex items-center -space-x-2 py-1 grayscale opacity-80 cursor-not-allowed">
+                                        <img src="https://placehold.co/80x80/eef2ff/334155" class="w-9 h-9 rounded-lg border-2 border-white">
+                                        <div class="w-9 h-9 rounded-lg bg-gray-100 border-2 border-white flex items-center justify-center text-xs text-gray-500">+9</div>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 align-top">
+                                    <div class="flex items-center"><i class="fa-solid fa-server text-gray-400 mr-2"></i><span class="text-xs text-gray-700">ERP素材库</span></div>
+                                </td>
+                                <td class="px-5 py-4 align-top cell-relative">
+                                    <div class="truncate w-48 font-medium text-gray-700 truncate-hover cursor-help">标题: Wireless Mouse Ergonomic...</div>
+                                    <div class="truncate w-48 text-xs text-gray-500 mt-1.5 truncate-hover cursor-help">卖点: 人体工学, 静音按键...</div>
+                                </td>
+                                <td class="px-5 py-4 align-top space-y-2">
+                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs block" onclick="showToast('已提交重试队列')"><i class="fa-solid fa-rotate-right mr-1"></i>重试推送</button>
+                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs block" onclick="openDrawer('drawer-view')">查看任务</button>
+                                    <button class="text-blue-600 hover:text-blue-800 font-medium text-xs block hint-target" data-hint="L2只读模式" onclick="openReviewWorkbench('readonly')">查看生图</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- 分页 -->
+                <div class="px-6 py-4 border-t border-gray-200 bg-white shrink-0 flex items-center justify-between text-sm text-gray-500 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)]"><div>共 <span class="font-bold text-gray-700">2</span> 条</div><div class="flex items-center space-x-4"><select class="border-gray-300 rounded text-sm py-1 focus:ring-blue-500"><option>20条/页</option><option>50条/页</option></select><nav class="isolate inline-flex -space-x-px rounded-md shadow-sm"><a href="#" class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"><i class="fa-solid fa-chevron-left text-xs"></i></a><a href="#" class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-blue-600">1</a><span class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300">...</span><a href="#" class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"><i class="fa-solid fa-chevron-right text-xs"></i></a></nav><div class="flex items-center space-x-2"><span>前往</span><input type="text" class="w-12 text-center border border-gray-300 rounded py-1 focus:ring-blue-500 outline-none"><span>页</span></div></div></div>
+            </div>
+
         </div>
     </div>
 
-    <!-- ================= 审核工作台 (L2) 修改版 ================= -->
+    <!-- ================= 审核工作台 (L2) 修改版 (支持只读模式+真实数据模拟) ================= -->
     <div id="review-workbench" class="workbench fixed inset-0 z-[100] flex flex-col hidden-tab bg-white">
         <!-- 1. 顶部导航栏 -->
         <div class="h-14 bg-white border-b border-gray-200 flex justify-between items-center px-6 shadow-sm shrink-0 z-20">
             <!-- 左侧：返回 + 任务ID -->
             <div class="flex items-center space-x-4">
-                <button onclick="closeReviewWorkbench()" class="text-gray-500 hover:text-slate-800 text-sm font-medium flex items-center transition-colors hint-target" data-hint="返回列表(带确认)"><i class="fa-solid fa-arrow-left mr-2"></i>返回列表</button>
+                <button onclick="closeReviewWorkbench()" class="text-gray-500 hover:text-slate-800 text-sm font-medium flex items-center transition-colors hint-target" data-hint="返回列表"><i class="fa-solid fa-arrow-left mr-2"></i>返回列表</button>
                 <div class="h-5 w-px bg-gray-300"></div>
                 <div class="flex items-center space-x-2 font-mono text-sm text-slate-600">
                     <span class="text-gray-400">任务ID:</span>
@@ -250,7 +401,7 @@
             
             <!-- 中间：审核进度 (Dynamic) -->
             <div class="flex items-center space-x-4">
-                <span class="text-sm font-bold text-gray-700">当前任务审核图片进度:</span>
+                <span class="text-sm font-bold text-gray-700" id="l2-status-text">当前任务审核图片进度:</span>
                 <div class="flex space-x-2">
                     <span id="count-approved" class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-bold">✅ 0</span>
                     <span id="count-rejected" class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-bold">❌ 0</span>
@@ -260,7 +411,12 @@
 
             <!-- 右侧：任务进度 (Removed hint) -->
             <div class="flex items-center space-x-4">
-                <div class="text-sm text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full"><i class="fa-solid fa-list-ol mr-2"></i>待审核任务进度: <span class="font-bold text-slate-800">1</span> / 8</div>
+                <!-- 只读模式下的任务切换 (默认隐藏，通过CSS .mode-readonly 控制显示) -->
+                <div id="l2-nav-task-switcher" class="hidden items-center space-x-2 mr-4">
+                    <button class="px-3 py-1.5 border border-gray-300 rounded text-xs font-medium hover:bg-gray-50 text-gray-600" title="上一个任务"><i class="fa-solid fa-chevron-left mr-1"></i>上一个</button>
+                    <button class="px-3 py-1.5 border border-gray-300 rounded text-xs font-medium hover:bg-gray-50 text-gray-600" title="下一个任务">下一个<i class="fa-solid fa-chevron-right ml-1"></i></button>
+                </div>
+                <div class="text-sm text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full"><i class="fa-solid fa-list-ol mr-2"></i><span id="l2-task-progress-text">待审核任务进度</span>: <span class="font-bold text-slate-800">1</span> / 8</div>
             </div>
         </div>
 
@@ -340,7 +496,7 @@
                                     <span class="bg-slate-900/80 text-white text-xs px-3 py-1.5 rounded-full font-medium backdrop-blur-sm shadow-lg"><i class="fa-solid fa-expand mr-1.5"></i>点击进入沉浸式大屏审图</span>
                                 </div>
                             </div>
-                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10">
+                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10 audit-card-actions">
                                 <button class="flex-1 text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors relative" onclick="toggleCardStatus(this, 'rejected')"><i class="fa-solid fa-xmark mr-1"></i>不通过</button>
                                 <button class="flex-1 text-xs font-medium text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors" onclick="toggleCardStatus(this, 'approved')"><i class="fa-solid fa-check mr-1"></i>通过</button>
                             </div>
@@ -355,7 +511,7 @@
                                     <span class="bg-slate-900/80 text-white text-xs px-3 py-1.5 rounded-full font-medium backdrop-blur-sm shadow-lg"><i class="fa-solid fa-expand mr-1.5"></i>点击进入沉浸式大屏审图</span>
                                 </div>
                             </div>
-                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10">
+                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10 audit-card-actions">
                                 <button class="flex-1 text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors relative" onclick="toggleCardStatus(this, 'rejected')"><i class="fa-solid fa-xmark mr-1"></i>不通过</button>
                                 <button class="flex-1 text-xs font-medium text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors" onclick="toggleCardStatus(this, 'approved')"><i class="fa-solid fa-check mr-1"></i>通过</button>
                             </div>
@@ -370,7 +526,7 @@
                                     <span class="bg-slate-900/80 text-white text-xs px-3 py-1.5 rounded-full font-medium backdrop-blur-sm shadow-lg"><i class="fa-solid fa-expand mr-1.5"></i>点击进入沉浸式大屏审图</span>
                                 </div>
                             </div>
-                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10"><button class="flex-1 text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors relative" onclick="toggleCardStatus(this, 'rejected')"><i class="fa-solid fa-xmark mr-1"></i>不通过</button><button class="flex-1 text-xs font-medium text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors" onclick="toggleCardStatus(this, 'approved')"><i class="fa-solid fa-check mr-1"></i>通过</button></div>
+                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10 audit-card-actions"><button class="flex-1 text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors relative" onclick="toggleCardStatus(this, 'rejected')"><i class="fa-solid fa-xmark mr-1"></i>不通过</button><button class="flex-1 text-xs font-medium text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors" onclick="toggleCardStatus(this, 'approved')"><i class="fa-solid fa-check mr-1"></i>通过</button></div>
                         </div>
                         
                         <!-- Card 4 -->
@@ -382,7 +538,7 @@
                                     <span class="bg-slate-900/80 text-white text-xs px-3 py-1.5 rounded-full font-medium backdrop-blur-sm shadow-lg"><i class="fa-solid fa-expand mr-1.5"></i>点击进入沉浸式大屏审图</span>
                                 </div>
                             </div>
-                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10"><button class="flex-1 text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors" onclick="toggleCardStatus(this, 'rejected')">不通过</button><button class="flex-1 text-xs font-medium text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors" onclick="toggleCardStatus(this, 'approved')">通过</button></div>
+                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10 audit-card-actions"><button class="flex-1 text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors" onclick="toggleCardStatus(this, 'rejected')">不通过</button><button class="flex-1 text-xs font-medium text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors" onclick="toggleCardStatus(this, 'approved')">通过</button></div>
                         </div>
                         <!-- Card 5 -->
                         <div class="audit-card status-pending bg-white rounded-xl shadow-sm overflow-hidden flex flex-col group relative">
@@ -393,7 +549,7 @@
                                     <span class="bg-slate-900/80 text-white text-xs px-3 py-1.5 rounded-full font-medium backdrop-blur-sm shadow-lg"><i class="fa-solid fa-expand mr-1.5"></i>点击进入沉浸式大屏审图</span>
                                 </div>
                             </div>
-                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10"><button class="flex-1 text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors" onclick="toggleCardStatus(this, 'rejected')">不通过</button><button class="flex-1 text-xs font-medium text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors" onclick="toggleCardStatus(this, 'approved')">通过</button></div>
+                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10 audit-card-actions"><button class="flex-1 text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors" onclick="toggleCardStatus(this, 'rejected')">不通过</button><button class="flex-1 text-xs font-medium text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors" onclick="toggleCardStatus(this, 'approved')">通过</button></div>
                         </div>
                         <!-- Card 6 -->
                         <div class="audit-card status-pending bg-white rounded-xl shadow-sm overflow-hidden flex flex-col group relative">
@@ -404,7 +560,7 @@
                                     <span class="bg-slate-900/80 text-white text-xs px-3 py-1.5 rounded-full font-medium backdrop-blur-sm shadow-lg"><i class="fa-solid fa-expand mr-1.5"></i>点击进入沉浸式大屏审图</span>
                                 </div>
                             </div>
-                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10"><button class="flex-1 text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors" onclick="toggleCardStatus(this, 'rejected')">不通过</button><button class="flex-1 text-xs font-medium text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors" onclick="toggleCardStatus(this, 'approved')">通过</button></div>
+                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10 audit-card-actions"><button class="flex-1 text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors" onclick="toggleCardStatus(this, 'rejected')">不通过</button><button class="flex-1 text-xs font-medium text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors" onclick="toggleCardStatus(this, 'approved')">通过</button></div>
                         </div>
                     </div>
                 </div>
@@ -431,7 +587,7 @@
                                     <span class="bg-slate-900/80 text-white text-xs px-3 py-1.5 rounded-full font-medium backdrop-blur-sm shadow-lg"><i class="fa-solid fa-expand mr-1.5"></i>点击进入沉浸式大屏审图</span>
                                 </div>
                             </div>
-                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10"><button class="flex-1 text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors relative" onclick="toggleCardStatus(this, 'rejected')"><i class="fa-solid fa-xmark mr-1"></i>不通过</button><button class="flex-1 text-xs font-medium text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors" onclick="toggleCardStatus(this, 'approved')"><i class="fa-solid fa-check mr-1"></i>通过</button></div>
+                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10 audit-card-actions"><button class="flex-1 text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors relative" onclick="toggleCardStatus(this, 'rejected')"><i class="fa-solid fa-xmark mr-1"></i>不通过</button><button class="flex-1 text-xs font-medium text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors" onclick="toggleCardStatus(this, 'approved')"><i class="fa-solid fa-check mr-1"></i>通过</button></div>
                         </div>
                         <div class="audit-card status-pending bg-white rounded-xl shadow-sm overflow-hidden flex flex-col group relative">
                             <div class="aspect-square relative cursor-zoom-in group" onclick="openDetailCompare()">
@@ -441,7 +597,7 @@
                                     <span class="bg-slate-900/80 text-white text-xs px-3 py-1.5 rounded-full font-medium backdrop-blur-sm shadow-lg"><i class="fa-solid fa-expand mr-1.5"></i>点击进入沉浸式大屏审图</span>
                                 </div>
                             </div>
-                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10"><button class="flex-1 text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors" onclick="toggleCardStatus(this, 'rejected')">不通过</button><button class="flex-1 text-xs font-medium text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors" onclick="toggleCardStatus(this, 'approved')">通过</button></div>
+                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10 audit-card-actions"><button class="flex-1 text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors" onclick="toggleCardStatus(this, 'rejected')">不通过</button><button class="flex-1 text-xs font-medium text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors" onclick="toggleCardStatus(this, 'approved')">通过</button></div>
                         </div>
                     </div>
                 </div>
@@ -468,7 +624,7 @@
                                     <span class="bg-slate-900/80 text-white text-xs px-3 py-1.5 rounded-full font-medium backdrop-blur-sm shadow-lg"><i class="fa-solid fa-expand mr-1.5"></i>点击进入沉浸式大屏审图</span>
                                 </div>
                             </div>
-                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10"><button class="flex-1 text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors" onclick="toggleCardStatus(this, 'rejected')">不通过</button><button class="flex-1 text-xs font-medium text-gray-500 hover:text-green-600 transition-colors" onclick="toggleCardStatus(this, 'approved')">通过</button></div>
+                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10 audit-card-actions"><button class="flex-1 text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors" onclick="toggleCardStatus(this, 'rejected')">不通过</button><button class="flex-1 text-xs font-medium text-gray-500 hover:text-green-600 transition-colors" onclick="toggleCardStatus(this, 'approved')">通过</button></div>
                         </div>
                         <div class="audit-card status-pending bg-white rounded-xl shadow-sm overflow-hidden flex flex-col group relative">
                             <div class="aspect-square relative cursor-zoom-in group" onclick="openDetailCompare()">
@@ -478,7 +634,7 @@
                                     <span class="bg-slate-900/80 text-white text-xs px-3 py-1.5 rounded-full font-medium backdrop-blur-sm shadow-lg"><i class="fa-solid fa-expand mr-1.5"></i>点击进入沉浸式大屏审图</span>
                                 </div>
                             </div>
-                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10"><button class="flex-1 text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors" onclick="toggleCardStatus(this, 'rejected')">不通过</button><button class="flex-1 text-xs font-medium text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors" onclick="toggleCardStatus(this, 'approved')">通过</button></div>
+                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10 audit-card-actions"><button class="flex-1 text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors" onclick="toggleCardStatus(this, 'rejected')">不通过</button><button class="flex-1 text-xs font-medium text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors" onclick="toggleCardStatus(this, 'approved')">通过</button></div>
                         </div>
                     </div>
                 </div>
@@ -505,7 +661,7 @@
                                     <span class="bg-slate-900/80 text-white text-xs px-3 py-1.5 rounded-full font-medium backdrop-blur-sm shadow-lg"><i class="fa-solid fa-expand mr-1.5"></i>点击进入沉浸式大屏审图</span>
                                 </div>
                             </div>
-                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10"><button class="flex-1 text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors" onclick="toggleCardStatus(this, 'rejected')">不通过</button><button class="flex-1 text-xs font-medium text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors" onclick="toggleCardStatus(this, 'approved')">通过</button></div>
+                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10 audit-card-actions"><button class="flex-1 text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors" onclick="toggleCardStatus(this, 'rejected')">不通过</button><button class="flex-1 text-xs font-medium text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors" onclick="toggleCardStatus(this, 'approved')">通过</button></div>
                         </div>
                         <div class="audit-card status-pending bg-white rounded-xl shadow-sm overflow-hidden flex flex-col group relative">
                             <div class="aspect-square bg-gray-50 flex items-center justify-center text-gray-300 relative cursor-zoom-in group" onclick="openDetailCompare()">
@@ -515,7 +671,7 @@
                                     <span class="bg-slate-900/80 text-white text-xs px-3 py-1.5 rounded-full font-medium backdrop-blur-sm shadow-lg"><i class="fa-solid fa-expand mr-1.5"></i>点击进入沉浸式大屏审图</span>
                                 </div>
                             </div>
-                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10"><button class="flex-1 text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors" onclick="toggleCardStatus(this, 'rejected')">不通过</button><button class="flex-1 text-xs font-medium text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors" onclick="toggleCardStatus(this, 'approved')">通过</button></div>
+                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10 audit-card-actions"><button class="flex-1 text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors" onclick="toggleCardStatus(this, 'rejected')">不通过</button><button class="flex-1 text-xs font-medium text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors" onclick="toggleCardStatus(this, 'approved')">通过</button></div>
                         </div>
                         <div class="audit-card status-pending bg-white rounded-xl shadow-sm overflow-hidden flex flex-col group relative">
                             <div class="aspect-square bg-gray-50 flex items-center justify-center text-gray-300 relative cursor-zoom-in group" onclick="openDetailCompare()">
@@ -525,7 +681,7 @@
                                     <span class="bg-slate-900/80 text-white text-xs px-3 py-1.5 rounded-full font-medium backdrop-blur-sm shadow-lg"><i class="fa-solid fa-expand mr-1.5"></i>点击进入沉浸式大屏审图</span>
                                 </div>
                             </div>
-                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10"><button class="flex-1 text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors" onclick="toggleCardStatus(this, 'rejected')">不通过</button><button class="flex-1 text-xs font-medium text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors" onclick="toggleCardStatus(this, 'approved')">通过</button></div>
+                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10 audit-card-actions"><button class="flex-1 text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors" onclick="toggleCardStatus(this, 'rejected')">不通过</button><button class="flex-1 text-xs font-medium text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors" onclick="toggleCardStatus(this, 'approved')">通过</button></div>
                         </div>
                         <div class="audit-card status-pending bg-white rounded-xl shadow-sm overflow-hidden flex flex-col group relative">
                             <div class="aspect-square bg-gray-50 flex items-center justify-center text-gray-300 relative cursor-zoom-in group" onclick="openDetailCompare()">
@@ -535,7 +691,7 @@
                                     <span class="bg-slate-900/80 text-white text-xs px-3 py-1.5 rounded-full font-medium backdrop-blur-sm shadow-lg"><i class="fa-solid fa-expand mr-1.5"></i>点击进入沉浸式大屏审图</span>
                                 </div>
                             </div>
-                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10"><button class="flex-1 text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors" onclick="toggleCardStatus(this, 'rejected')">不通过</button><button class="flex-1 text-xs font-medium text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors" onclick="toggleCardStatus(this, 'approved')">通过</button></div>
+                            <div class="flex border-t border-gray-100 divide-x divide-gray-100 h-10 audit-card-actions"><button class="flex-1 text-xs font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors" onclick="toggleCardStatus(this, 'rejected')">不通过</button><button class="flex-1 text-xs font-medium text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors" onclick="toggleCardStatus(this, 'approved')">通过</button></div>
                         </div>
                     </div>
                 </div>
@@ -544,8 +700,8 @@
             </div>
         </div>
 
-        <!-- 3. 底部操作栏 (New Design V46) -->
-        <div class="h-16 bg-white border-t border-gray-200 px-8 flex justify-end items-center shadow-[0_-4px_10px_-2px_rgba(0,0,0,0.05)] shrink-0 z-30 space-x-4">
+        <!-- 3. 底部操作栏 (New Design V46 - Readonly mode will hide this) -->
+        <div id="l2-bottom-bar" class="h-16 bg-white border-t border-gray-200 px-8 flex justify-end items-center shadow-[0_-4px_10px_-2px_rgba(0,0,0,0.05)] shrink-0 z-30 space-x-4">
              <label class="flex items-center text-xs text-gray-600 cursor-pointer select-none mr-4">
                 <input type="checkbox" id="chk-reject-pending" onchange="checkAuditCompletion()" class="rounded bg-gray-50 border-gray-300 text-blue-600 focus:ring-0 w-3.5 h-3.5 mr-2">
                 推送时待审图都直接判定为不通过
@@ -714,8 +870,8 @@
             </div>
         </div>
 
-        <!-- Footer Actions -->
-        <div class="h-20 flex justify-end items-center pb-4 px-6 space-x-6 shrink-0 border-t border-gray-800 bg-black/95 z-30">
+        <!-- Footer Actions (Readonly will hide this) -->
+        <div id="l3-footer-actions" class="h-20 flex justify-end items-center pb-4 px-6 space-x-6 shrink-0 border-t border-gray-800 bg-black/95 z-30">
             <!-- V42: Checkbox Options -->
             <div class="flex flex-col space-y-1 text-[10px] text-gray-400 mr-2">
                 <label class="flex items-center cursor-pointer hover:text-gray-200">
@@ -773,6 +929,8 @@
             document.getElementById('tab-content-1').classList.add('hidden-tab');
             document.getElementById('tab-content-2').classList.add('hidden-tab');
             document.getElementById('tab-content-3').classList.add('hidden-tab');
+            document.getElementById('tab-content-4').classList.add('hidden-tab');
+            
             const content = document.getElementById('tab-content-' + id);
             if(content) content.classList.remove('hidden-tab');
         }
@@ -786,15 +944,92 @@
         function openDrawer(id) { document.getElementById('overlay').classList.add('open'); document.getElementById(id).classList.add('open'); }
         function openModal(id) { document.getElementById('overlay').classList.add('open'); document.getElementById(id).classList.add('open'); }
         
-        function openReviewWorkbench() {
+        // Modified openReviewWorkbench to support 'readonly' mode with MOCK DATA
+        function openReviewWorkbench(mode = 'edit') {
             const wb = document.getElementById('review-workbench');
+            
+            // Handle Read-only classes and MOCK DATA
+            if (mode === 'readonly') {
+                wb.classList.add('mode-readonly');
+                // Mock Data for Tab 4 visualization
+                document.getElementById('l2-status-text').textContent = "当前任务审核图片进度:";
+                document.getElementById('l2-task-progress-text').textContent = "待推送任务进度";
+                
+                // Set counts to simulate an audited task
+                document.getElementById('count-approved').textContent = `✅ 10`;
+                document.getElementById('count-rejected').textContent = `❌ 8`;
+                document.getElementById('count-pending').textContent = `⏳ 待审 0`;
+                
+                // Simulate cards being audited (Visual only for this demo)
+                mockReadonlyData(true);
+
+            } else {
+                wb.classList.remove('mode-readonly');
+                // Reset to Tab 3 default
+                document.getElementById('l2-status-text').textContent = "当前任务审核图片进度:";
+                document.getElementById('l2-task-progress-text').textContent = "待审核任务进度";
+                updateL2Stats(); // Reset counts based on actual DOM classes
+                
+                mockReadonlyData(false); // Reset cards
+            }
+
             wb.classList.remove('hidden-tab'); 
             void wb.offsetWidth; 
             wb.classList.add('open');
-            // Check audit completion status on open
-            updateL2Stats();
         }
         
+        // Helper to simulate audited state for Tab 4 demo
+        function mockReadonlyData(enable) {
+            const cards = document.querySelectorAll('#review-workbench .audit-card');
+            const thumbs = document.querySelectorAll('.l3-carousel-item');
+            
+            if (enable) {
+                // Hardcode specific patterns for demo
+                // Scene 1-6: 4 pass, 2 fail
+                if(cards[0]) setCardState(cards[0], 'approved');
+                if(cards[1]) setCardState(cards[1], 'approved');
+                if(cards[2]) setCardState(cards[2], 'approved');
+                if(cards[3]) setCardState(cards[3], 'approved');
+                if(cards[4]) setCardState(cards[4], 'rejected');
+                if(cards[5]) setCardState(cards[5], 'rejected');
+                
+                // White 1-2: 2 pass
+                if(cards[6]) setCardState(cards[6], 'approved');
+                if(cards[7]) setCardState(cards[7], 'approved');
+                
+                // CloseUp 1-2: 2 pass
+                if(cards[8]) setCardState(cards[8], 'approved');
+                if(cards[9]) setCardState(cards[9], 'approved');
+                
+                // Selling 1-4: 2 pass, 2 fail
+                if(cards[10]) setCardState(cards[10], 'approved');
+                if(cards[11]) setCardState(cards[11], 'approved');
+                if(cards[12]) setCardState(cards[12], 'rejected');
+                if(cards[13]) setCardState(cards[13], 'rejected');
+
+                // Sync L3 thumbs
+                thumbs.forEach((t, i) => {
+                    t.classList.remove('status-approved', 'status-rejected');
+                    if(cards[i] && cards[i].classList.contains('status-approved')) t.classList.add('status-approved');
+                    if(cards[i] && cards[i].classList.contains('status-rejected')) t.classList.add('status-rejected');
+                });
+
+            } else {
+                // Reset to pending
+                cards.forEach(c => {
+                    c.classList.remove('status-approved', 'status-rejected');
+                    c.classList.add('status-pending');
+                });
+                thumbs.forEach(t => {
+                    t.classList.remove('status-approved', 'status-rejected');
+                });
+            }
+        }
+        function setCardState(el, state) {
+            el.classList.remove('status-pending', 'status-approved', 'status-rejected');
+            el.classList.add('status-' + state);
+        }
+
         function showToast(msg, duration = 3000) {
             const container = document.getElementById('toast-container');
             const toastEl = document.getElementById('global-toast');
@@ -811,15 +1046,22 @@
         }
 
         function closeReviewWorkbench(skipConfirm = false) {
+            const wb = document.getElementById('review-workbench');
+            const isReadOnly = wb.classList.contains('mode-readonly');
             const auditedCount = document.querySelectorAll('#review-workbench .audit-card:not(.status-pending)').length;
             
-            if(skipConfirm || auditedCount === 0 || confirm('确定返回列表吗？当前未保存的操作将丢失，并重置为待审核。')) {
-                // Reset State on exit
-                if(!skipConfirm) resetAuditState();
+            // Skip confirmation if in read-only mode or no changes made (in edit mode)
+            if(isReadOnly || skipConfirm || auditedCount === 0 || confirm('确定返回列表吗？当前未保存的操作将丢失，并重置为待审核。')) {
+                // Reset State on exit only if editing
+                if(!skipConfirm && !isReadOnly) resetAuditState();
                 
-                const wb = document.getElementById('review-workbench');
                 wb.classList.remove('open');
-                setTimeout(() => { wb.classList.add('hidden-tab'); }, 300);
+                setTimeout(() => { 
+                    wb.classList.add('hidden-tab'); 
+                    wb.classList.remove('mode-readonly'); // Cleanup class
+                    // Clean mock data if exiting readonly
+                    if(isReadOnly) mockReadonlyData(false); 
+                }, 300);
             }
         }
 
@@ -1077,6 +1319,10 @@
         }
         
         function auditImageL3(status) {
+            // Read-only check: if body has mode-readonly class implicitly via workbench parent
+            const wb = document.getElementById('review-workbench');
+            if (wb.classList.contains('mode-readonly')) return;
+
             const allItems = getAllCarouselItems();
             const activeIndex = allItems.findIndex(el => el.classList.contains('active'));
             
@@ -1149,7 +1395,15 @@
         function openDetailCompare() { 
             const el = document.getElementById('detail-modal');
             const hintBtn = document.getElementById('toggle-hints-btn'); 
+            const wb = document.getElementById('review-workbench');
+            const isReadOnly = wb.classList.contains('mode-readonly');
             
+            if (isReadOnly) {
+                el.classList.add('mode-readonly');
+            } else {
+                el.classList.remove('mode-readonly');
+            }
+
             el.classList.remove('hidden');
             if(hintBtn) hintBtn.classList.add('hidden-force'); 
             
@@ -1158,8 +1412,8 @@
             const l3Items = document.querySelectorAll('.l3-carousel-item');
             
             l3Items.forEach((item, index) => {
+                item.classList.remove('status-approved', 'status-rejected');
                 if (l2Cards[index]) {
-                    item.classList.remove('status-approved', 'status-rejected');
                     if (l2Cards[index].classList.contains('status-approved')) item.classList.add('status-approved');
                     if (l2Cards[index].classList.contains('status-rejected')) item.classList.add('status-rejected');
                 }
@@ -1182,7 +1436,10 @@
             el.classList.remove('open');
             if(hintBtn) hintBtn.classList.remove('hidden-force'); 
             
-            setTimeout(() => el.classList.add('hidden'), 200);
+            setTimeout(() => {
+                el.classList.add('hidden');
+                el.classList.remove('mode-readonly'); // Cleanup
+            }, 200);
         }
 
         // Global Keyboard Shortcuts
@@ -1191,6 +1448,9 @@
             const pushModal = document.getElementById('modal-push-confirm');
             const l2Workbench = document.getElementById('review-workbench');
             const tab3 = document.getElementById('tab-content-3');
+            
+            // Check for read-only mode to prevent keyboard actions
+            const isReadOnly = l2Workbench.classList.contains('mode-readonly');
 
             // 1. Push Modal Priority
             if (pushModal && pushModal.classList.contains('open')) {
@@ -1206,10 +1466,10 @@
 
             // 2. L3 Priority
             if (l3Modal && l3Modal.classList.contains('open')) {
-                if (e.key === 'ArrowUp') { // Changed to ArrowUp
+                if (!isReadOnly && e.key === 'ArrowUp') { 
                     e.preventDefault(); 
                     auditImageL3('approved');
-                } else if (e.key === 'ArrowDown') { // Changed to ArrowDown
+                } else if (!isReadOnly && e.key === 'ArrowDown') { 
                     e.preventDefault(); 
                     auditImageL3('rejected');
                 } else if (e.key === 'Escape') {
@@ -1230,7 +1490,7 @@
                     openDetailCompare();
                 } else if (e.key === 'Escape') {
                     closeReviewWorkbench();
-                } else if (e.key === 'ArrowRight') {
+                } else if (!isReadOnly && e.key === 'ArrowRight') {
                     const btn = document.getElementById('btn-l2-push-next');
                     if (btn && !btn.disabled) {
                         handleNewPushAction('next');
